@@ -1,0 +1,43 @@
+# Git
+.git
+.gitignore
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Documentation
+*.md
+docs
+
+# Mobile app (not containerized)
+mobile
+
+# Node modules (each project has its own)
+node_modules
+
+# Python cache
+__pycache__
+*.py[cod]
+.venv
+venv
+
+# Logs
+logs
+*.log
+
+# Test files
+coverage
+.pytest_cache
+.nyc_output
