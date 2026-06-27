@@ -103,6 +103,18 @@ export class VerificationController {
     return this.verificationService.getLatestVerification(attemptId);
   }
 
+  @Get('attempt/:attemptId/status')
+  @Roles(UserRole.ADMIN, UserRole.TEACHER, UserRole.PROCTOR, UserRole.STUDENT)
+  @ApiOperation({ summary: 'Get verification status for an attempt (whether student has been verified)' })
+  @ApiParam({ name: 'attemptId', description: 'Attempt UUID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Verification status',
+  })
+  async getVerificationStatus(@Param('attemptId', ParseUUIDPipe) attemptId: string) {
+    return this.verificationService.getVerificationStatus(attemptId);
+  }
+
   @Post('alerts')
   @Roles(UserRole.PROCTOR, UserRole.ADMIN)
   @ApiOperation({ summary: 'Create a new alert' })

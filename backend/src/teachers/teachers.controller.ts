@@ -24,6 +24,7 @@ import {
   QueryTeacherDto,
   TeacherResponseDto,
   TeacherListResponseDto,
+  ResetPasswordDto,
 } from './dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -102,6 +103,22 @@ export class TeachersController {
   @ApiResponse({ status: 404, description: 'Teacher not found' })
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.teachersService.remove(id);
+  }
+
+  @Patch(':id/reset-password')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Reset a teacher password' })
+  @ApiParam({ name: 'id', description: 'Teacher UUID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Teacher password reset successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Teacher not found' })
+  resetPassword(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() resetPasswordDto: ResetPasswordDto,
+  ) {
+    return this.teachersService.resetPassword(id, resetPasswordDto.password);
   }
 
   @Patch(':id/deactivate')

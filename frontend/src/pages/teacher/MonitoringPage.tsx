@@ -56,10 +56,19 @@ const MonitoringPage: React.FC = () => {
   const [pendingVerifications, setPendingVerifications] = useState(0);
   const [recentVerifications, setRecentVerifications] = useState<VerificationResult[]>([]);
 
-  // Fetch teacher's exams (ACTIVE = ongoing)
+  // Fetch teacher's exams (ACTIVE and PUBLISHED - both can be monitored)
   const { data: examsData, isLoading: examsLoading } = useQuery({
-    queryKey: ['teacherExams', 'ACTIVE'],
-    queryFn: () => examService.getTeacherExams({ status: 'ACTIVE' }),
+    queryKey: ['teacherExams', 'monitoring'],
+    queryFn: async () => {
+      // Fetch both active and published exams for monitoring
+      const [activeExams, publishedExams] = await Promise.all([
+        examService.getTeacherExams({ status: 'ACTIVE' }),
+        examService.getTeacherExams({ status: 'PUBLISHED' }),
+      ]);
+      return {
+        data: [...(activeExams.data || []), ...(publishedExams.data || [])],
+      };
+    },
   });
 
   // Fetch verification logs (fallback polling)
@@ -90,17 +99,38 @@ const MonitoringPage: React.FC = () => {
 
     const connectAndJoin = async () => {
       try {
+        console.log('Connecting to monitoring socket...');
         await monitoringSocket.connect(token);
         setIsConnected(true);
+        console.log('Socket connected, joining exam room:', selectedExam);
 
         const data = await monitoringSocket.joinExamRoom(selectedExam);
+        console.log('Join exam room response:', data);
+
         if (data) {
           setMonitoringData(data);
-          setStudents(data.students);
+          setStudents(data.students || []);
+          console.log('Monitoring data loaded:', data.examTitle, 'Students:', data.students?.length || 0);
+          // Show success message
+          if (data.students?.length === 0) {
+            toast.success(t('monitoring.connectedWaiting') || 'Connected. Waiting for students to join...');
+          } else {
+            toast.success(t('monitoring.connectedWithStudents') || `Connected. ${data.students?.length} student(s) in exam.`);
+          }
+        } else {
+          console.warn('No data returned from joinExamRoom - this may be a timeout or permission issue');
+          // Don't show error if socket is still connected - the join might have succeeded on server side
+          if (monitoringSocket.isConnected()) {
+            toast.error(t('monitoring.joinFailed') || 'Could not join exam room. Please refresh the page.');
+          } else {
+            toast.error(t('monitoring.connectionFailed') || 'Failed to connect to live monitoring');
+          }
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Failed to connect to monitoring:', error);
-        toast.error(t('monitoring.connectionFailed') || 'Failed to connect to live monitoring');
+        const errorMessage = error?.message || t('monitoring.connectionFailed') || 'Failed to connect to live monitoring';
+        toast.error(errorMessage);
+        setIsConnected(false);
       }
     };
 
@@ -119,12 +149,26 @@ const MonitoringPage: React.FC = () => {
 
     // Student online/offline updates
     unsubscribers.push(
-      monitoringSocket.onStudentOnline(({ attemptId }) => {
-        setStudents(prev =>
-          prev.map(s =>
-            s.attemptId === attemptId ? { ...s, isOnline: true } : s
-          )
-        );
+      monitoringSocket.onStudentOnline(async ({ attemptId }) => {
+        // Check if this student already exists in our list
+        setStudents(prev => {
+          const existingStudent = prev.find(s => s.attemptId === attemptId);
+          if (existingStudent) {
+            // Update existing student's online status
+            return prev.map(s =>
+              s.attemptId === attemptId ? { ...s, isOnline: true } : s
+            );
+          }
+          // Student not in list - need to fetch updated data
+          return prev;
+        });
+
+        // Fetch updated monitoring data to get the new student
+        const updatedData = await monitoringSocket.requestMonitoringUpdate();
+        if (updatedData) {
+          setMonitoringData(updatedData);
+          setStudents(updatedData.students || []);
+        }
       })
     );
 
@@ -292,11 +336,11 @@ const MonitoringPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t('monitoring.title')}</h1>
-          <p className="text-gray-500 mt-1">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('monitoring.title')}</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">
             {t('monitoring.liveMonitoring')}
             {isConnected && (
-              <span className="ml-2 inline-flex items-center gap-1 text-green-600">
+              <span className="ml-2 inline-flex items-center gap-1 text-green-600 dark:text-green-400">
                 <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
                 {t('monitoring.connected') || 'Connected'}
               </span>
@@ -315,11 +359,11 @@ const MonitoringPage: React.FC = () => {
       {!selectedExam ? (
         <Card>
           <div className="text-center py-12">
-            <EyeIcon className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
+            <EyeIcon className="h-16 w-16 mx-auto mb-4 text-gray-300 dark:text-gray-600" />
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
               {t('exam.selectAnswer')}
             </h3>
-            <p className="text-gray-500">{t('monitoring.liveMonitoring')}</p>
+            <p className="text-gray-500 dark:text-gray-400">{t('monitoring.liveMonitoring')}</p>
           </div>
         </Card>
       ) : (
@@ -349,19 +393,19 @@ const MonitoringPage: React.FC = () => {
           </div>
 
           {/* Tabs */}
-          <div className="border-b border-gray-200">
+          <div className="border-b border-gray-200 dark:border-gray-700">
             <nav className="flex gap-4">
               <button
                 onClick={() => setActiveTab('cameras')}
                 className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors ${
                   activeTab === 'cameras'
                     ? 'border-primary-600 text-primary-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                    : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                 }`}
               >
                 <VideoCameraIcon className="h-5 w-5 inline-block me-2" />
                 {t('monitoring.liveCameras') || 'Live Cameras'}
-                <span className="ml-2 px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-xs">
+                <span className="ml-2 px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded text-xs">
                   {students.length}
                 </span>
               </button>
@@ -370,13 +414,13 @@ const MonitoringPage: React.FC = () => {
                 className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors ${
                   activeTab === 'verifications'
                     ? 'border-primary-600 text-primary-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                    : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                 }`}
               >
                 <ShieldCheckIcon className="h-5 w-5 inline-block me-2" />
                 {t('verification.verifications') || 'Verifications'}
                 {pendingVerifications > 0 && (
-                  <span className="ml-2 px-2 py-0.5 bg-red-100 text-red-600 rounded text-xs animate-pulse">
+                  <span className="ml-2 px-2 py-0.5 bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-300 rounded text-xs animate-pulse">
                     {pendingVerifications}
                   </span>
                 )}
@@ -386,13 +430,13 @@ const MonitoringPage: React.FC = () => {
                 className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors ${
                   activeTab === 'alerts'
                     ? 'border-primary-600 text-primary-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                    : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                 }`}
               >
                 <BellIcon className="h-5 w-5 inline-block me-2" />
                 {t('monitoring.alerts')}
                 {(monitoringData?.unresolvedAlerts || 0) > 0 && (
-                  <span className="ml-2 px-2 py-0.5 bg-red-100 text-red-600 rounded text-xs">
+                  <span className="ml-2 px-2 py-0.5 bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-300 rounded text-xs">
                     {monitoringData?.unresolvedAlerts}
                   </span>
                 )}
@@ -402,7 +446,7 @@ const MonitoringPage: React.FC = () => {
                 className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors ${
                   activeTab === 'logs'
                     ? 'border-primary-600 text-primary-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                    : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                 }`}
               >
                 <ClockIcon className="h-5 w-5 inline-block me-2" />

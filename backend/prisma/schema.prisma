@@ -74,6 +74,7 @@ model User {
 
   student       Student?
   teacher       Teacher?
+  admin         Admin?
   refreshTokens RefreshToken[]
 
   @@index([email])
@@ -132,6 +133,19 @@ model Teacher {
   @@map("teachers")
 }
 
+model Admin {
+  id        String   @id @default(uuid())
+  userId    String   @unique @map("user_id")
+  nameAr    String   @map("name_ar")
+  nameEn    String   @map("name_en")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("admins")
+}
+
 // ==================== COURSE MANAGEMENT ====================
 
 model Course {
@@ -147,6 +161,7 @@ model Course {
   teacherId     String   @map("teacher_id")
   semester      String
   year          Int      @default(2026)
+  creditHours   Int?     @map("credit_hours")
   isActive      Boolean  @default(true) @map("is_active")
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")

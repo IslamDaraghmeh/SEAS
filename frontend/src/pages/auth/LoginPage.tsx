@@ -43,14 +43,14 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-primary-100 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-primary-100 dark:from-gray-900 dark:to-gray-800 flex flex-col">
       {/* Header */}
       <header className="p-4 flex justify-between items-center">
         <div className="flex items-center gap-2">
           <div className="w-10 h-10 bg-primary-600 rounded-lg flex items-center justify-center">
             <span className="text-white font-bold text-lg">S</span>
           </div>
-          <span className="text-xl font-bold text-gray-900">
+          <span className="text-xl font-bold text-gray-900 dark:text-white">
             {t('common.appNameShort')}
           </span>
         </div>
@@ -61,16 +61,16 @@ const LoginPage: React.FC = () => {
       <main className="flex-1 flex items-center justify-center p-4">
         <div className="w-full max-w-md">
           {/* Card */}
-          <div className="bg-white rounded-2xl shadow-xl p-8">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
             {/* Logo */}
             <div className="text-center mb-8">
               <div className="w-16 h-16 bg-primary-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <span className="text-white font-bold text-3xl">S</span>
               </div>
-              <h1 className="text-2xl font-bold text-gray-900">
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
                 {t('auth.loginTitle')}
               </h1>
-              <p className="text-gray-500 mt-2">{t('auth.loginSubtitle')}</p>
+              <p className="text-gray-500 dark:text-gray-400 mt-2">{t('auth.loginSubtitle')}</p>
             </div>
 
             {/* Error Alert */}
@@ -107,7 +107,7 @@ const LoginPage: React.FC = () => {
                 />
                 <button
                   type="button"
-                  className="absolute end-3 top-9 text-gray-400 hover:text-gray-600"
+                  className="absolute end-3 top-9 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
                   onClick={() => setShowPassword(!showPassword)}
                 >
                   {showPassword ? (
@@ -123,15 +123,15 @@ const LoginPage: React.FC = () => {
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
-                    className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                    className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-primary-600 focus:ring-primary-500"
                   />
-                  <span className="text-sm text-gray-600">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">
                     {t('auth.rememberMe')}
                   </span>
                 </label>
                 <Link
                   to="/forgot-password"
-                  className="text-sm text-primary-600 hover:text-primary-700"
+                  className="text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
                 >
                   {t('auth.forgotPassword')}
                 </Link>
@@ -149,11 +149,11 @@ const LoginPage: React.FC = () => {
             </form>
 
             {/* Register Link */}
-            <p className="mt-8 text-center text-gray-600">
+            <p className="mt-8 text-center text-gray-600 dark:text-gray-400">
               {t('auth.noAccount')}{' '}
               <Link
                 to="/register"
-                className="text-primary-600 hover:text-primary-700 font-medium"
+                className="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 font-medium"
               >
                 {t('auth.register')}
               </Link>
@@ -161,7 +161,7 @@ const LoginPage: React.FC = () => {
           </div>
 
           {/* Footer */}
-          <p className="text-center text-sm text-gray-500 mt-8">
+          <p className="text-center text-sm text-gray-500 dark:text-gray-400 mt-8">
             {t('common.appName')}
           </p>
         </div>

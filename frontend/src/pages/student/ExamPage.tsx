@@ -9,6 +9,8 @@ import {
   ExclamationTriangleIcon,
   VideoCameraIcon,
   UserCircleIcon,
+  CheckCircleIcon,
+  ShieldExclamationIcon,
 } from '@heroicons/react/24/outline';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
@@ -38,6 +40,8 @@ const StudentExamPage: React.FC = () => {
   const [examStartTime, setExamStartTime] = useState<Date | null>(null);
   const [attemptId, setAttemptId] = useState<string | null>(null);
   const [isSocketConnected, setIsSocketConnected] = useState(false);
+  const [isVerified, setIsVerified] = useState(false);
+  const [verificationScore, setVerificationScore] = useState<number | null>(null);
 
   // Check face registration status
   const { data: faceStatus, isLoading: faceStatusLoading } = useQuery({
@@ -82,7 +86,21 @@ const StudentExamPage: React.FC = () => {
     mutationFn: (submission: { examId: string; answers: Answer[]; timeTaken: number }) =>
       examService.submitExam(submission),
     onSuccess: () => {
+      // Disconnect from monitoring
+      studentSocket.leaveExam();
       navigate('/student/results');
+    },
+    onError: (error: any) => {
+      console.error('Failed to submit exam:', error);
+      const errorMessage = error?.response?.data?.message || error?.message || t('errors.submit') || 'Failed to submit exam. Please try again.';
+
+      // Check if it's a verification error
+      if (errorMessage.toLowerCase().includes('verification')) {
+        setIsVerified(false); // Reset verification status to prompt re-verification
+        alert(t('verification.verificationRequired') || errorMessage);
+      } else {
+        alert(errorMessage);
+      }
     },
   });
 
@@ -98,6 +116,49 @@ const StudentExamPage: React.FC = () => {
     return () => {
       studentSocket.leaveExam();
     };
+  }, []);
+
+  // Check verification status when attemptId is available
+  useEffect(() => {
+    const checkVerificationStatus = async () => {
+      if (!attemptId || !exam?.requiresVerification) return;
+
+      try {
+        const status = await verificationService.getVerificationStatus(attemptId);
+        if (status?.isVerified) {
+          setIsVerified(true);
+          setVerificationScore(status.matchScore || null);
+        }
+      } catch (error) {
+        console.error('Failed to check verification status:', error);
+      }
+    };
+
+    checkVerificationStatus();
+  }, [attemptId, exam?.requiresVerification]);
+
+  // Listen for manual verification from teacher
+  useEffect(() => {
+    if (!isSocketConnected || !exam?.requiresVerification) return;
+
+    const unsubscribe = studentSocket.onManualVerification((data) => {
+      if (data.approved) {
+        setIsVerified(true);
+        console.log('Manual verification approved by teacher');
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [isSocketConnected, exam?.requiresVerification]);
+
+  // Handle verification result from camera
+  const handleVerificationResult = useCallback((result: { isVerified: boolean; matchScore: number }) => {
+    if (result.isVerified) {
+      setIsVerified(true);
+      setVerificationScore(result.matchScore);
+    }
   }, []);
 
   // Current question
@@ -148,9 +209,17 @@ const StudentExamPage: React.FC = () => {
 
   // Handle submit
   const handleSubmitExam = useCallback(() => {
-    if (!exam || !examStartTime) return;
+    if (!exam) return;
 
-    const timeTaken = Math.floor((Date.now() - examStartTime.getTime()) / 1000);
+    // Calculate time taken - use examStartTime if available, otherwise estimate from exam duration
+    let timeTaken = 0;
+    if (examStartTime) {
+      timeTaken = Math.floor((Date.now() - examStartTime.getTime()) / 1000);
+    } else {
+      // Fallback: estimate based on exam duration (assume they used most of the time)
+      timeTaken = exam.duration * 60;
+    }
+
     const answersList: Answer[] = exam.questions.map((q) => ({
       questionId: q.id,
       answer: answers[q.id] ?? null,
@@ -232,6 +301,31 @@ const StudentExamPage: React.FC = () => {
             <p className="text-sm text-gray-500">{exam.courseName}</p>
           </div>
           <div className="flex items-center gap-4">
+            {/* Verification Status Indicator */}
+            {exam.requiresVerification && (
+              <div className={`flex items-center gap-2 px-3 py-1 rounded-full ${
+                isVerified
+                  ? 'bg-green-50 border border-green-200'
+                  : 'bg-yellow-50 border border-yellow-200'
+              }`}>
+                {isVerified ? (
+                  <>
+                    <CheckCircleIcon className="h-4 w-4 text-green-600" />
+                    <span className="text-xs font-medium text-green-600">
+                      {t('verification.verified') || 'Verified'}
+                      {verificationScore && ` (${Math.round(verificationScore * 100)}%)`}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <ShieldExclamationIcon className="h-4 w-4 text-yellow-600" />
+                    <span className="text-xs font-medium text-yellow-600">
+                      {t('verification.pendingVerification') || 'Verification Required'}
+                    </span>
+                  </>
+                )}
+              </div>
+            )}
             {/* Monitoring Indicator */}
             {exam.requiresVerification && isSocketConnected && (
               <div className="flex items-center gap-2 px-3 py-1 bg-red-50 border border-red-200 rounded-full">
@@ -299,13 +393,21 @@ const StudentExamPage: React.FC = () => {
             </Button>
 
             {currentQuestionIndex === totalQuestions - 1 ? (
-              <Button
-                variant="primary"
-                onClick={() => setShowSubmitModal(true)}
-                rightIcon={<PaperAirplaneIcon className="h-5 w-5" />}
-              >
-                {t('exam.submitExam')}
-              </Button>
+              <div className="flex flex-col items-end gap-1">
+                <Button
+                  variant="primary"
+                  onClick={() => setShowSubmitModal(true)}
+                  rightIcon={<PaperAirplaneIcon className="h-5 w-5" />}
+                  disabled={exam.requiresVerification && !isVerified}
+                >
+                  {t('exam.submitExam')}
+                </Button>
+                {exam.requiresVerification && !isVerified && (
+                  <span className="text-xs text-yellow-600">
+                    {t('verification.verifyToSubmit') || 'Complete face verification to submit'}
+                  </span>
+                )}
+              </div>
             ) : (
               <Button
                 variant="primary"
@@ -382,8 +484,14 @@ const StudentExamPage: React.FC = () => {
                 verificationInterval={exam.verificationInterval ? exam.verificationInterval * 60 : 300}
                 enableStreaming={isSocketConnected}
                 streamInterval={3000}
-                onVerificationComplete={(success) => {
-                  if (!success) {
+                onVerificationComplete={(success, result) => {
+                  if (success) {
+                    // Verification succeeded
+                    setIsVerified(true);
+                    if (result?.matchScore) {
+                      setVerificationScore(result.matchScore);
+                    }
+                  } else {
                     // Handle failed verification
                     console.log('Verification failed');
                     // Report to proctors
@@ -404,12 +512,29 @@ const StudentExamPage: React.FC = () => {
             </div>
           )}
 
+          {/* Verification Status Alert */}
+          {exam.requiresVerification && !isVerified && (
+            <Alert
+              variant="error"
+              message={t('verification.verifyBeforeSubmit') || 'Face verification is required before you can submit the exam. Please look at the camera and wait for verification.'}
+              showIcon
+            />
+          )}
+          {exam.requiresVerification && isVerified && (
+            <Alert
+              variant="success"
+              message={`${t('verification.verificationComplete') || 'Face verification complete.'} ${verificationScore ? `(${Math.round(verificationScore * 100)}% match)` : ''}`}
+              showIcon
+            />
+          )}
           {/* Warning */}
-          <Alert
-            variant="warning"
-            message={t('verification.verificationWarning')}
-            showIcon
-          />
+          {!exam.requiresVerification && (
+            <Alert
+              variant="warning"
+              message={t('verification.verificationWarning')}
+              showIcon
+            />
+          )}
         </div>
       </div>
 
@@ -419,7 +544,11 @@ const StudentExamPage: React.FC = () => {
         onClose={() => setShowSubmitModal(false)}
         onConfirm={handleSubmitExam}
         title={t('exam.submitExam')}
-        message={`${t('exam.confirmSubmit')} (${answeredCount}/${totalQuestions} ${t('exam.answer')})`}
+        message={
+          exam.requiresVerification && isVerified
+            ? `${t('exam.confirmSubmit')} (${answeredCount}/${totalQuestions} ${t('exam.answer')}) - ${t('verification.verified') || 'Verified'}`
+            : `${t('exam.confirmSubmit')} (${answeredCount}/${totalQuestions} ${t('exam.answer')})`
+        }
         confirmText={t('exam.submitExam')}
         cancelText={t('common.cancel')}
         isLoading={submitExamMutation.isPending}

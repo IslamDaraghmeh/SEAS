@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNotEmpty, IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, IsUUID, ValidateNested, IsArray } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class SubmitAnswerDto {
   @ApiProperty({
@@ -32,5 +33,8 @@ export class SubmitAllAnswersDto {
     type: [SubmitAnswerDto],
     description: 'All answers to submit',
   })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => SubmitAnswerDto)
   answers: SubmitAnswerDto[];
 }

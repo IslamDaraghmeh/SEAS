@@ -120,6 +120,11 @@ export class TeachersService {
               isActive: true,
             },
           },
+          _count: {
+            select: {
+              courses: true,
+            },
+          },
         },
       }),
       this.prisma.teacher.count({ where }),
@@ -127,10 +132,12 @@ export class TeachersService {
 
     return {
       data: teachers,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
     };
   }
 
@@ -228,6 +235,25 @@ export class TeachersService {
     });
 
     return { message: 'Teacher deleted successfully' };
+  }
+
+  async resetPassword(id: string, password: string) {
+    const teacher = await this.prisma.teacher.findUnique({
+      where: { id },
+    });
+
+    if (!teacher) {
+      throw new NotFoundException('Teacher not found');
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    await this.prisma.user.update({
+      where: { id: teacher.userId },
+      data: { passwordHash: hashedPassword },
+    });
+
+    return { message: 'Teacher password reset successfully' };
   }
 
   async deactivate(id: string) {

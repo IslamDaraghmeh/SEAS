@@ -22,9 +22,9 @@ const LanguageSwitch: React.FC = () => {
 
   return (
     <Menu as="div" className="relative">
-      <Menu.Button className="flex items-center gap-2 px-3 py-2 rounded-xl bg-gray-50 hover:bg-gray-100 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-colors">
-        <GlobeAltIcon className="h-4 w-4 text-gray-500" />
-        <span className="text-sm font-medium text-gray-700">
+      <Menu.Button className="flex items-center gap-2 px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-colors">
+        <GlobeAltIcon className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+        <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
           {languageNames[language].native}
         </span>
       </Menu.Button>
@@ -38,7 +38,7 @@ const LanguageSwitch: React.FC = () => {
         leaveFrom="transform opacity-100 scale-100 translate-y-0"
         leaveTo="transform opacity-0 scale-95 -translate-y-2"
       >
-        <Menu.Items className="absolute end-0 mt-2 w-44 bg-white rounded-xl shadow-xl ring-1 ring-black/5 focus:outline-none z-50 overflow-hidden">
+        <Menu.Items className="absolute end-0 mt-2 w-44 bg-white dark:bg-gray-800 rounded-xl shadow-xl ring-1 ring-black/5 dark:ring-gray-700 focus:outline-none z-50 overflow-hidden">
           <div className="p-1.5">
             {SUPPORTED_LANGUAGES.map((lang) => (
               <Menu.Item key={lang}>
@@ -46,9 +46,9 @@ const LanguageSwitch: React.FC = () => {
                   <button
                     onClick={() => changeLanguage(lang)}
                     className={`flex items-center justify-between w-full px-3 py-2.5 text-sm rounded-lg transition-colors ${
-                      active ? 'bg-gray-100' : ''
+                      active ? 'bg-gray-100 dark:bg-gray-700' : ''
                     } ${
-                      language === lang ? 'text-primary-600 bg-primary-50' : 'text-gray-700'
+                      language === lang ? 'text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/30' : 'text-gray-700 dark:text-gray-300'
                     }`}
                   >
                     <div className="flex items-center gap-2.5">
@@ -56,7 +56,7 @@ const LanguageSwitch: React.FC = () => {
                       <span className="font-medium">{languageNames[lang].native}</span>
                     </div>
                     {language === lang && (
-                      <CheckIcon className="h-4 w-4 text-primary-600" />
+                      <CheckIcon className="h-4 w-4 text-primary-600 dark:text-primary-400" />
                     )}
                   </button>
                 )}
@@ -82,7 +82,7 @@ export const LanguageToggle: React.FC = () => {
   return (
     <button
       onClick={toggleLanguage}
-      className="px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-colors"
+      className="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-gray-700 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-colors"
     >
       {language === 'ar' ? '🇺🇸 EN' : '🇸🇦 عربي'}
     </button>

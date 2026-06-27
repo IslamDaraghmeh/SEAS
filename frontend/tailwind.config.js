@@ -38,6 +38,31 @@ export default {
           900: '#0f172a',
           950: '#020617',
         },
+        // Semantic dark mode colors using CSS variables
+        dark: {
+          bg: {
+            primary: 'rgb(var(--color-bg-primary) / <alpha-value>)',
+            secondary: 'rgb(var(--color-bg-secondary) / <alpha-value>)',
+            tertiary: 'rgb(var(--color-bg-tertiary) / <alpha-value>)',
+            elevated: 'rgb(var(--color-bg-elevated) / <alpha-value>)',
+          },
+          surface: {
+            DEFAULT: 'rgb(var(--color-surface) / <alpha-value>)',
+            hover: 'rgb(var(--color-surface-hover) / <alpha-value>)',
+            active: 'rgb(var(--color-surface-active) / <alpha-value>)',
+          },
+          border: {
+            DEFAULT: 'rgb(var(--color-border) / <alpha-value>)',
+            light: 'rgb(var(--color-border-light) / <alpha-value>)',
+            focus: 'rgb(var(--color-border-focus) / <alpha-value>)',
+          },
+          text: {
+            primary: 'rgb(var(--color-text-primary) / <alpha-value>)',
+            secondary: 'rgb(var(--color-text-secondary) / <alpha-value>)',
+            tertiary: 'rgb(var(--color-text-tertiary) / <alpha-value>)',
+            muted: 'rgb(var(--color-text-muted) / <alpha-value>)',
+          },
+        },
       },
       spacing: {
         // RTL-friendly spacing using logical properties

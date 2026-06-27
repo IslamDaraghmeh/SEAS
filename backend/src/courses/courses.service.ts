@@ -19,7 +19,10 @@ export class CoursesService {
   constructor(private prisma: PrismaService) {}
 
   async create(createCourseDto: CreateCourseDto) {
-    const { teacherId, ...courseData } = createCourseDto;
+    const { teacherId, academicYear, ...courseData } = createCourseDto;
+
+    // Map academicYear to year field if provided
+    const year = academicYear ? parseInt(academicYear, 10) : undefined;
 
     // Check if teacher exists
     const teacher = await this.prisma.teacher.findUnique({
@@ -47,6 +50,7 @@ export class CoursesService {
     return this.prisma.course.create({
       data: {
         ...courseData,
+        ...(year && { year }),
         teacher: { connect: { id: teacherId } },
       },
       include: {
@@ -133,10 +137,12 @@ export class CoursesService {
 
     return {
       data: courses,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
     };
   }
 
@@ -245,9 +251,18 @@ export class CoursesService {
       }
     }
 
+    // Extract fields that need transformation
+    const { academicYear, ...updateData } = updateCourseDto;
+
+    // Map academicYear to year field if provided
+    const year = academicYear ? parseInt(academicYear, 10) : undefined;
+
     return this.prisma.course.update({
       where: { id },
-      data: updateCourseDto,
+      data: {
+        ...updateData,
+        ...(year && { year }),
+      },
       include: {
         teacher: {
           select: {

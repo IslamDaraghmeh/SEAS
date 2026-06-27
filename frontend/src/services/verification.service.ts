@@ -591,6 +591,23 @@ export const verificationService = {
     const response = await api.get('/verification/face-status/all');
     return response.data;
   },
+
+  /**
+   * Get verification status for an exam attempt (check if student has been verified)
+   */
+  async getVerificationStatus(attemptId: string): Promise<{
+    isVerified: boolean;
+    matchScore: number | null;
+    verifiedAt: string | null;
+  }> {
+    try {
+      const response = await api.get(`/verification/attempt/${attemptId}/status`);
+      return response.data;
+    } catch {
+      // If endpoint doesn't exist or returns error, assume not verified
+      return { isVerified: false, matchScore: null, verifiedAt: null };
+    }
+  },
 };
 
 export default verificationService;

@@ -81,11 +81,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, userRole }) => {
   const getRoleBadgeColor = () => {
     switch (userRole) {
       case 'admin':
-        return 'bg-red-50 text-red-700 border-red-200';
+        return 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 border-red-200 dark:border-red-800';
       case 'teacher':
-        return 'bg-blue-50 text-blue-700 border-blue-200';
+        return 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800';
       default:
-        return 'bg-green-50 text-green-700 border-green-200';
+        return 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800';
     }
   };
 
@@ -111,14 +111,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, userRole }) => {
         }}
       >
         {/* Sidebar Header with SEAS Logo */}
-        <div className="h-16 flex items-center justify-between px-5 border-b border-gray-100 bg-white">
+        <div className="h-16 flex items-center justify-between px-5 border-b border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-primary-600 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-lg">S</span>
             </div>
             <div>
-              <h1 className="text-gray-900 font-bold text-lg tracking-tight">SEAS</h1>
-              <p className="text-gray-400 text-[10px] font-medium uppercase tracking-wider">
+              <h1 className="text-gray-900 dark:text-white font-bold text-lg tracking-tight">SEAS</h1>
+              <p className="text-gray-400 dark:text-gray-500 text-[10px] font-medium uppercase tracking-wider">
                 {isRTL ? 'نظام الاختبارات' : 'Exam System'}
               </p>
             </div>
@@ -126,14 +126,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, userRole }) => {
           {/* Mobile close button */}
           <button
             onClick={onClose}
-            className="lg:hidden p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+            className="lg:hidden p-2 rounded-lg text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
           >
             <XMarkIcon className="h-5 w-5" />
           </button>
         </div>
 
         {/* Role Badge */}
-        <div className="px-4 py-3 border-b border-gray-100">
+        <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
           <span className={`inline-flex items-center px-3 py-1 text-xs font-medium rounded-full border ${getRoleBadgeColor()}`}>
             {t(`auth.${userRole}`)}
           </span>
@@ -151,8 +151,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, userRole }) => {
                 className={({ isActive }) =>
                   `group flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 ${
                     isActive
-                      ? 'bg-primary-50 text-primary-700 font-medium shadow-sm'
-                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                      ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 font-medium shadow-sm'
+                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-200'
                   }`
                 }
               >
@@ -160,8 +160,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, userRole }) => {
                   <>
                     <span className={`p-1.5 rounded-lg transition-colors ${
                       isActive
-                        ? 'bg-primary-100'
-                        : 'bg-gray-100 group-hover:bg-gray-200'
+                        ? 'bg-primary-100 dark:bg-primary-900/50'
+                        : 'bg-gray-100 dark:bg-gray-700 group-hover:bg-gray-200 dark:group-hover:bg-gray-600'
                     }`}>
                       <item.icon className="h-5 w-5" />
                     </span>
@@ -173,11 +173,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, userRole }) => {
           </div>
 
           {/* Divider */}
-          <div className="my-4 border-t border-gray-200" />
+          <div className="my-4 border-t border-gray-200 dark:border-gray-700" />
 
           {/* Account Navigation */}
           <div className="space-y-1">
-            <p className="px-4 text-xs font-medium text-gray-400 uppercase tracking-wider mb-2">
+            <p className="px-4 text-xs font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">
               {t('settings.account')}
             </p>
             {accountItems.map((item) => (
@@ -188,8 +188,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, userRole }) => {
                 className={({ isActive }) =>
                   `group flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 ${
                     isActive
-                      ? 'bg-primary-50 text-primary-700 font-medium shadow-sm'
-                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                      ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 font-medium shadow-sm'
+                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-200'
                   }`
                 }
               >
@@ -197,8 +197,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, userRole }) => {
                   <>
                     <span className={`p-1.5 rounded-lg transition-colors ${
                       isActive
-                        ? 'bg-primary-100'
-                        : 'bg-gray-100 group-hover:bg-gray-200'
+                        ? 'bg-primary-100 dark:bg-primary-900/50'
+                        : 'bg-gray-100 dark:bg-gray-700 group-hover:bg-gray-200 dark:group-hover:bg-gray-600'
                     }`}>
                       <item.icon className="h-5 w-5" />
                     </span>
@@ -211,16 +211,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, userRole }) => {
         </nav>
 
         {/* Footer */}
-        <div className="p-4 border-t border-gray-100 bg-gray-50/50">
+        <div className="p-4 border-t border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50">
           <div className="flex items-center justify-center gap-2">
-            <div className="w-6 h-6 bg-primary-100 rounded-md flex items-center justify-center">
-              <span className="text-primary-600 font-bold text-xs">S</span>
+            <div className="w-6 h-6 bg-primary-100 dark:bg-primary-900/50 rounded-md flex items-center justify-center">
+              <span className="text-primary-600 dark:text-primary-400 font-bold text-xs">S</span>
             </div>
             <div className="text-center">
-              <p className="text-[10px] text-gray-400 uppercase tracking-wider">
+              <p className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                 {isRTL ? 'نظام الحضور الذكي للاختبارات' : 'Smart Exam Attendance System'}
               </p>
-              <p className="text-[10px] text-gray-300">v1.0.0</p>
+              <p className="text-[10px] text-gray-300 dark:text-gray-600">v1.0.0</p>
             </div>
           </div>
         </div>

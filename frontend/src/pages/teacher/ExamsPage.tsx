@@ -11,6 +11,7 @@ import {
   DocumentDuplicateIcon,
   ArrowUpTrayIcon,
   ChartBarIcon,
+  PlayIcon,
 } from '@heroicons/react/24/outline';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
@@ -62,6 +63,14 @@ const TeacherExamsPage: React.FC = () => {
     },
   });
 
+  // Activate mutation
+  const activateMutation = useMutation({
+    mutationFn: (examId: string) => examService.activateExam(examId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['teacherExams'] });
+    },
+  });
+
   const exams = examsData?.data || [];
 
   // Filter exams (with null-safe checks)
@@ -87,10 +96,10 @@ const TeacherExamsPage: React.FC = () => {
   // Status badge component (backend uses uppercase: DRAFT, PUBLISHED, ACTIVE, COMPLETED)
   const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
     const styles: Record<string, string> = {
-      DRAFT: 'bg-gray-100 text-gray-700',
-      PUBLISHED: 'bg-blue-100 text-blue-700',
-      ACTIVE: 'bg-green-100 text-green-700',
-      COMPLETED: 'bg-purple-100 text-purple-700',
+      DRAFT: 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300',
+      PUBLISHED: 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
+      ACTIVE: 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300',
+      COMPLETED: 'bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300',
     };
 
     const statusLabels: Record<string, string> = {
@@ -116,8 +125,8 @@ const TeacherExamsPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t('nav.exams')}</h1>
-          <p className="text-gray-500 mt-1">{t('teacher.createdExams')}</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('nav.exams')}</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">{t('teacher.createdExams')}</p>
         </div>
         <Link to="/teacher/exams/create">
           <Button leftIcon={<PlusCircleIcon className="h-5 w-5" />}>
@@ -155,22 +164,22 @@ const TeacherExamsPage: React.FC = () => {
                 {/* Exam Info */}
                 <div className="flex-1">
                   <div className="flex items-start gap-4">
-                    <div className="p-3 bg-primary-100 rounded-lg">
-                      <AcademicCapIcon className="h-6 w-6 text-primary-600" />
+                    <div className="p-3 bg-primary-100 dark:bg-primary-900 rounded-lg">
+                      <AcademicCapIcon className="h-6 w-6 text-primary-600 dark:text-primary-400" />
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <h3 className="text-lg font-semibold text-gray-900">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                           {exam.title}
                         </h3>
                         <StatusBadge status={exam.status} />
                       </div>
-                      <p className="text-sm text-gray-500 mt-1">{exam.courseName}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{exam.courseName}</p>
                     </div>
                   </div>
 
                   {/* Exam Details */}
-                  <div className="flex flex-wrap items-center gap-4 mt-4 text-sm text-gray-600">
+                  <div className="flex flex-wrap items-center gap-4 mt-4 text-sm text-gray-600 dark:text-gray-400">
                     <span>{exam.totalQuestions} {t('exam.totalQuestions')}</span>
                     <span>{exam.totalMarks} {t('exam.marks')}</span>
                     <span>{exam.duration} {t('exam.minutes')}</span>
@@ -190,7 +199,18 @@ const TeacherExamsPage: React.FC = () => {
                       onClick={() => publishMutation.mutate(exam.id)}
                       isLoading={publishMutation.isPending}
                     >
-                      {t('exam.published')}
+                      {t('exam.publish') || 'Publish'}
+                    </Button>
+                  )}
+                  {exam.status === 'PUBLISHED' && (
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      leftIcon={<PlayIcon className="h-4 w-4" />}
+                      onClick={() => activateMutation.mutate(exam.id)}
+                      isLoading={activateMutation.isPending}
+                    >
+                      {t('exam.activate') || 'Activate'}
                     </Button>
                   )}
                   {(exam.status === 'ACTIVE' || exam.status === 'PUBLISHED') && (
@@ -241,11 +261,11 @@ const TeacherExamsPage: React.FC = () => {
       ) : (
         <Card>
           <div className="text-center py-12">
-            <AcademicCapIcon className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
+            <AcademicCapIcon className="h-16 w-16 mx-auto mb-4 text-gray-300 dark:text-gray-600" />
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
               {t('exam.noExamsAvailable')}
             </h3>
-            <p className="text-gray-500 mb-4">{t('common.noData')}</p>
+            <p className="text-gray-500 dark:text-gray-400 mb-4">{t('common.noData')}</p>
             <Link to="/teacher/exams/create">
               <Button leftIcon={<PlusCircleIcon className="h-5 w-5" />}>
                 {t('exam.createExam')}

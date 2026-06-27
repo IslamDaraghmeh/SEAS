@@ -111,10 +111,12 @@ export class ExamsService {
 
     return {
       data: exams,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
     };
   }
 
@@ -247,10 +249,12 @@ export class ExamsService {
 
     return {
       data: exams,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
     };
   }
 
@@ -381,10 +385,12 @@ export class ExamsService {
 
     return {
       data: exams,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
     };
   }
 
@@ -446,10 +452,12 @@ export class ExamsService {
         submittedAt: attempt.submittedAt,
         gradedAt: attempt.gradedAt,
       })),
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
     };
   }
 
@@ -782,6 +790,22 @@ export class ExamsService {
       throw new NotFoundException('No active attempt found for this exam');
     }
 
+    // Check if verification is required and if student has been verified
+    if (attempt.exam.requireVerification) {
+      const successfulVerification = await this.prisma.verificationLog.findFirst({
+        where: {
+          attemptId: attempt.id,
+          isVerified: true,
+        },
+      });
+
+      if (!successfulVerification) {
+        throw new BadRequestException(
+          'Face verification is required before submitting the exam. Please complete verification first.'
+        );
+      }
+    }
+
     // Save all answers
     for (const answer of submitDto.answers) {
       const question = attempt.exam.questions.find(
@@ -824,12 +848,31 @@ export class ExamsService {
     }
 
     // Calculate total score
-    const answers = await this.prisma.examAnswer.findMany({
+    const savedAnswers = await this.prisma.examAnswer.findMany({
       where: { attemptId: attempt.id },
     });
 
-    const totalScore = answers.reduce((sum, a) => sum + (a.pointsAwarded || 0), 0);
-    const percentage = (totalScore / attempt.exam.totalPoints) * 100;
+    const totalScore = savedAnswers.reduce((sum, a) => sum + (a.pointsAwarded || 0), 0);
+    const totalQuestions = attempt.exam.questions.length;
+    const answeredQuestions = savedAnswers.filter(a => a.selectedOptionId || a.textAnswer).length;
+    const correctAnswers = savedAnswers.filter(a => a.isCorrect === true).length;
+    const wrongAnswers = answeredQuestions - correctAnswers;
+    const unanswered = totalQuestions - answeredQuestions;
+    const percentage = attempt.exam.totalPoints > 0
+      ? (totalScore / attempt.exam.totalPoints) * 100
+      : 0;
+
+    // Calculate time taken
+    const timeTaken = attempt.startedAt
+      ? Math.floor((new Date().getTime() - new Date(attempt.startedAt).getTime()) / 1000)
+      : 0;
+
+    // Determine grade based on percentage
+    let grade = 'F';
+    if (percentage >= 90) grade = 'A';
+    else if (percentage >= 80) grade = 'B';
+    else if (percentage >= 70) grade = 'C';
+    else if (percentage >= 60) grade = 'D';
 
     // Update attempt as submitted
     const updatedAttempt = await this.prisma.examAttempt.update({
@@ -857,9 +900,15 @@ export class ExamsService {
       examId: updatedAttempt.examId,
       examTitle: updatedAttempt.exam.titleEn || updatedAttempt.exam.titleAr,
       score: totalScore,
+      totalMarks: updatedAttempt.exam.totalPoints,
       totalPoints: updatedAttempt.exam.totalPoints,
       percentage,
       passed: percentage >= updatedAttempt.exam.passingScore,
+      grade,
+      correctAnswers,
+      wrongAnswers,
+      unanswered,
+      timeTaken,
       submittedAt: updatedAttempt.submittedAt,
     };
   }
@@ -958,10 +1007,12 @@ export class ExamsService {
         gradedAt: attempt.gradedAt,
         status: attempt.status,
       })),
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
     };
   }
 

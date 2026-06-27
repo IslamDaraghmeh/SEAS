@@ -43,10 +43,10 @@ const Card: React.FC<CardProps> = ({
   onClick,
   hoverable = false,
 }) => {
-  const baseStyles = 'bg-white';
-  const borderStyles = border ? 'border border-gray-200' : '';
+  const baseStyles = 'bg-white dark:bg-gray-800';
+  const borderStyles = border ? 'border border-gray-200 dark:border-gray-700' : '';
   const hoverStyles = hoverable
-    ? 'cursor-pointer hover:shadow-md hover:border-gray-300 transition-all'
+    ? 'cursor-pointer hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 transition-all'
     : '';
   const clickableStyles = onClick ? 'cursor-pointer' : '';
 
@@ -95,7 +95,7 @@ export const CardHeader: React.FC<CardHeaderProps> = ({
 }) => {
   return (
     <div
-      className={`flex items-center justify-between pb-4 border-b border-gray-200 mb-4 ${className}`}
+      className={`flex items-center justify-between pb-4 border-b border-gray-200 dark:border-gray-700 mb-4 ${className}`}
     >
       <div>{children}</div>
       {action && <div>{action}</div>}
@@ -114,7 +114,7 @@ export const CardTitle: React.FC<CardTitleProps> = ({
   className = '',
 }) => {
   return (
-    <h3 className={`text-lg font-semibold text-gray-900 ${className}`}>
+    <h3 className={`text-lg font-semibold text-gray-900 dark:text-white ${className}`}>
       {children}
     </h3>
   );
@@ -130,7 +130,7 @@ export const CardDescription: React.FC<CardDescriptionProps> = ({
   children,
   className = '',
 }) => {
-  return <p className={`text-sm text-gray-500 mt-1 ${className}`}>{children}</p>;
+  return <p className={`text-sm text-gray-500 dark:text-gray-400 mt-1 ${className}`}>{children}</p>;
 };
 
 // Card Content
@@ -158,7 +158,7 @@ export const CardFooter: React.FC<CardFooterProps> = ({
 }) => {
   return (
     <div
-      className={`flex items-center justify-end gap-3 pt-4 border-t border-gray-200 mt-4 ${className}`}
+      className={`flex items-center justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700 mt-4 ${className}`}
     >
       {children}
     </div>
@@ -188,8 +188,8 @@ export const StatCard: React.FC<StatCardProps> = ({
     <Card className={className}>
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-sm font-medium text-gray-500">{title}</p>
-          <p className="text-2xl font-bold text-gray-900 mt-1">{value}</p>
+          <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{title}</p>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{value}</p>
           {trend && (
             <p
               className={`text-sm mt-2 ${
@@ -202,7 +202,7 @@ export const StatCard: React.FC<StatCardProps> = ({
           )}
         </div>
         {icon && (
-          <div className="p-3 bg-primary-50 rounded-lg text-primary-600">
+          <div className="p-3 bg-primary-50 dark:bg-primary-900/30 rounded-lg text-primary-600 dark:text-primary-400">
             {icon}
           </div>
         )}

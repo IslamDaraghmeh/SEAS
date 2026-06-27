@@ -58,14 +58,24 @@ export class MonitoringGateway
         secret: this.configService.get('JWT_SECRET'),
       });
 
+      // Look up teacherId if user is a teacher
+      let teacherId: string | undefined;
+      if (payload.role === 'TEACHER') {
+        const teacher = await this.prisma.teacher.findFirst({
+          where: { userId: payload.sub },
+          select: { id: true },
+        });
+        teacherId = teacher?.id;
+      }
+
       client.user = {
         id: payload.sub,
         email: payload.email,
         role: payload.role,
-        teacherId: payload.teacherId, // Will be present for teacher users
+        teacherId,
       };
 
-      console.log(`Client connected: ${client.id}, User: ${client.user.email}, Role: ${client.user.role}`);
+      console.log(`Client connected: ${client.id}, User: ${client.user.email}, Role: ${client.user.role}, TeacherId: ${teacherId || 'N/A'}`);
     } catch (error) {
       console.error('Authentication failed:', error.message);
       client.disconnect();
@@ -91,41 +101,53 @@ export class MonitoringGateway
     @ConnectedSocket() client: AuthenticatedSocket,
     @MessageBody() data: { examId: string },
   ) {
-    if (!client.user) return;
+    try {
+      if (!client.user) {
+        return { success: false, error: 'Not authenticated' };
+      }
 
-    // Only allow teachers, admins, and proctors to join exam rooms
-    if (!['TEACHER', 'ADMIN', 'PROCTOR'].includes(client.user.role)) {
-      return { error: 'Unauthorized' };
-    }
+      // Only allow teachers, admins, and proctors to join exam rooms
+      if (!['TEACHER', 'ADMIN', 'PROCTOR'].includes(client.user.role)) {
+        return { success: false, error: 'Unauthorized' };
+      }
 
-    // For teachers, verify they own the course for this exam
-    if (client.user.role === 'TEACHER' && client.user.teacherId) {
-      const exam = await this.prisma.exam.findUnique({
-        where: { id: data.examId },
-        include: {
-          course: {
-            select: { teacherId: true },
+      // For teachers, verify they own the course for this exam
+      if (client.user.role === 'TEACHER' && client.user.teacherId) {
+        const exam = await this.prisma.exam.findUnique({
+          where: { id: data.examId },
+          include: {
+            course: {
+              select: { teacherId: true },
+            },
           },
-        },
-      });
+        });
 
-      if (!exam) {
-        return { error: 'Exam not found' };
+        if (!exam) {
+          return { success: false, error: 'Exam not found' };
+        }
+
+        if (exam.course.teacherId !== client.user.teacherId) {
+          return { success: false, error: 'You can only monitor exams for your own courses' };
+        }
       }
 
-      if (exam.course.teacherId !== client.user.teacherId) {
-        return { error: 'You can only monitor exams for your own courses' };
+      client.join(`exam:${data.examId}`);
+
+      // Send initial monitoring data
+      const monitoringData = await this.monitoringService.getExamMonitoringData(
+        data.examId,
+      );
+
+      console.log(`Teacher ${client.user.email} joined exam room: ${data.examId}`);
+      console.log(`Monitoring data: ${monitoringData.students?.length || 0} students, active: ${monitoringData.activeStudents}`);
+      if (monitoringData.students?.length > 0) {
+        console.log('Students:', monitoringData.students.map(s => `${s.studentName} (${s.attemptId}, online: ${s.isOnline})`).join(', '));
       }
+      return { success: true, data: monitoringData };
+    } catch (error) {
+      console.error('Error joining exam room:', error);
+      return { success: false, error: 'Failed to join exam room' };
     }
-
-    client.join(`exam:${data.examId}`);
-
-    // Send initial monitoring data
-    const monitoringData = await this.monitoringService.getExamMonitoringData(
-      data.examId,
-    );
-
-    return { success: true, data: monitoringData };
   }
 
   @SubscribeMessage('leaveExamRoom')
@@ -142,12 +164,16 @@ export class MonitoringGateway
     @ConnectedSocket() client: AuthenticatedSocket,
     @MessageBody() data: { attemptId: string; examId: string },
   ) {
+    console.log(`Student joining exam: ${client.user?.email}, attemptId: ${data.attemptId}, examId: ${data.examId}`);
+
     if (!client.user || client.user.role !== 'STUDENT') {
-      return { error: 'Unauthorized' };
+      console.log('Student join rejected: not a student or not authenticated');
+      return { success: false, error: 'Unauthorized' };
     }
 
     client.attemptId = data.attemptId;
     await this.monitoringService.setStudentOnline(data.attemptId, client.id);
+    console.log(`Student ${client.user.email} joined exam ${data.examId} successfully`);
 
     // Notify proctors
     this.server.to(`exam:${data.examId}`).emit('studentOnline', {
@@ -327,9 +353,11 @@ export class MonitoringGateway
       return { error: 'Unauthorized' };
     }
 
+    console.log(`Monitoring update requested by ${client.user.email} for exam ${data.examId}`);
     const monitoringData = await this.monitoringService.getExamMonitoringData(
       data.examId,
     );
+    console.log(`Update response: ${monitoringData.students?.length || 0} students`);
 
     return { success: true, data: monitoringData };
   }
@@ -364,6 +392,12 @@ export class MonitoringGateway
   ) {
     if (!client.user || client.user.role !== 'STUDENT') {
       return { error: 'Unauthorized' };
+    }
+
+    // Log frame received (only log occasionally to avoid spam)
+    const frameSize = data.frame?.length || 0;
+    if (Math.random() < 0.1) { // Log ~10% of frames
+      console.log(`Frame received from ${client.user.email} for exam ${data.examId}, size: ${frameSize} bytes`);
     }
 
     // Forward frame to proctors watching this exam
@@ -579,6 +613,14 @@ export class MonitoringGateway
       verificationLogId: data.verificationLogId,
       attemptId: data.attemptId,
       studentId: data.studentId,
+      approved: data.approved,
+      verifiedBy: data.verifiedBy,
+      notes: data.notes,
+      timestamp: data.timestamp,
+    });
+
+    // Also notify the student so their UI can update
+    this.server.to(`student:${data.attemptId}`).emit(`manualVerification:${data.attemptId}`, {
       approved: data.approved,
       verifiedBy: data.verifiedBy,
       notes: data.notes,

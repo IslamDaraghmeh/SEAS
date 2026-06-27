@@ -378,7 +378,13 @@
     "reviewNotes": "ملاحظات المراجعة (اختياري)",
     "enterReviewNotes": "أدخل أي ملاحظات حول هذا التحقق...",
     "recentVerifications": "التحققات الأخيرة",
-    "noRecentVerifications": "لا توجد تحققات حديثة"
+    "noRecentVerifications": "لا توجد تحققات حديثة",
+    "pendingVerification": "التحقق مطلوب",
+    "verifyToSubmit": "أكمل التحقق من الوجه للتسليم",
+    "verifyBeforeSubmit": "التحقق من الوجه مطلوب قبل تسليم الاختبار. يرجى النظر إلى الكاميرا وانتظار التحقق.",
+    "verificationComplete": "اكتمل التحقق من الوجه.",
+    "retrying": "جاري إعادة المحاولة...",
+    "retryAttempt": "المحاولة {{current}} من {{max}}"
   },
   "results": {
     "title": "نتائج الاختبار",
@@ -552,7 +558,8 @@
     "updateFailed": "فشل التحديث",
     "deleteFailed": "فشل الحذف",
     "removeFailed": "فشل الإزالة",
-    "saveFailed": "فشل الحفظ"
+    "saveFailed": "فشل الحفظ",
+    "submit": "فشل تسليم الاختبار. حاول مرة أخرى."
   },
   "validation": {
     "minLength": "يجب أن يكون على الأقل {{min}} أحرف",

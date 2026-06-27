@@ -2,8 +2,66 @@
 @tailwind components;
 @tailwind utilities;
 
-/* RTL Support - CSS Logical Properties */
+/* Clean Dark Mode Color System */
 @layer base {
+  :root {
+    /* Background colors */
+    --color-bg-primary: 255 255 255;
+    --color-bg-secondary: 249 250 251;
+    --color-bg-tertiary: 243 244 246;
+    --color-bg-elevated: 255 255 255;
+
+    /* Surface colors (cards, modals, etc.) */
+    --color-surface: 255 255 255;
+    --color-surface-hover: 249 250 251;
+    --color-surface-active: 243 244 246;
+
+    /* Border colors */
+    --color-border: 229 231 235;
+    --color-border-light: 243 244 246;
+    --color-border-focus: 59 130 246;
+
+    /* Text colors */
+    --color-text-primary: 17 24 39;
+    --color-text-secondary: 107 114 128;
+    --color-text-tertiary: 156 163 175;
+    --color-text-muted: 209 213 219;
+
+    /* Scrollbar */
+    --color-scrollbar-track: 241 245 249;
+    --color-scrollbar-thumb: 148 163 184;
+    --color-scrollbar-thumb-hover: 100 116 139;
+  }
+
+  .dark {
+    /* Background colors - clean dark grays */
+    --color-bg-primary: 17 24 39;
+    --color-bg-secondary: 31 41 55;
+    --color-bg-tertiary: 55 65 81;
+    --color-bg-elevated: 31 41 55;
+
+    /* Surface colors */
+    --color-surface: 31 41 55;
+    --color-surface-hover: 55 65 81;
+    --color-surface-active: 75 85 99;
+
+    /* Border colors */
+    --color-border: 55 65 81;
+    --color-border-light: 75 85 99;
+    --color-border-focus: 96 165 250;
+
+    /* Text colors */
+    --color-text-primary: 249 250 251;
+    --color-text-secondary: 156 163 175;
+    --color-text-tertiary: 107 114 128;
+    --color-text-muted: 75 85 99;
+
+    /* Scrollbar */
+    --color-scrollbar-track: 31 41 55;
+    --color-scrollbar-thumb: 75 85 99;
+    --color-scrollbar-thumb-hover: 107 114 128;
+  }
+
   html {
     font-family: 'Inter', system-ui, sans-serif;
   }
@@ -105,24 +163,24 @@
   }
 }
 
-/* Custom scrollbar for RTL */
+/* Custom scrollbar - using CSS variables for consistency */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: rgb(var(--color-scrollbar-track));
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #94a3b8;
+  background: rgb(var(--color-scrollbar-thumb));
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #64748b;
+  background: rgb(var(--color-scrollbar-thumb-hover));
 }
 
 /* Focus styles */

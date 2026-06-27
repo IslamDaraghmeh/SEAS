@@ -134,6 +134,12 @@ export class StudentsService {
               isActive: true,
             },
           },
+          _count: {
+            select: {
+              enrollments: true,
+              examAttempts: true,
+            },
+          },
         },
       }),
       this.prisma.student.count({ where }),
@@ -141,10 +147,12 @@ export class StudentsService {
 
     return {
       data: students,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
     };
   }
 

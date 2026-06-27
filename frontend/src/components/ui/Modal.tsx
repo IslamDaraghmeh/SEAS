@@ -68,22 +68,22 @@ const Modal: React.FC<ModalProps> = ({
               leaveTo="opacity-0 scale-95"
             >
               <Dialog.Panel
-                className={`w-full ${sizeStyles[size]} transform overflow-hidden rounded-xl bg-white text-start shadow-xl transition-all`}
+                className={`w-full ${sizeStyles[size]} transform overflow-hidden rounded-xl bg-white dark:bg-gray-800 text-start shadow-xl transition-all`}
               >
                 {/* Header */}
                 {(title || showCloseButton) && (
-                  <div className="flex items-start justify-between p-4 border-b border-gray-200">
+                  <div className="flex items-start justify-between p-4 border-b border-gray-200 dark:border-gray-700">
                     <div>
                       {title && (
                         <Dialog.Title
                           as="h3"
-                          className="text-lg font-semibold text-gray-900"
+                          className="text-lg font-semibold text-gray-900 dark:text-white"
                         >
                           {title}
                         </Dialog.Title>
                       )}
                       {description && (
-                        <Dialog.Description className="text-sm text-gray-500 mt-1">
+                        <Dialog.Description className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                           {description}
                         </Dialog.Description>
                       )}
@@ -91,7 +91,7 @@ const Modal: React.FC<ModalProps> = ({
                     {showCloseButton && (
                       <button
                         type="button"
-                        className="p-1 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        className="p-1 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:text-gray-500 dark:hover:text-gray-300 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500"
                         onClick={onClose}
                       >
                         <span className="sr-only">Close</span>
@@ -106,7 +106,7 @@ const Modal: React.FC<ModalProps> = ({
 
                 {/* Footer */}
                 {footer && (
-                  <div className="flex items-center justify-end gap-3 p-4 border-t border-gray-200 bg-gray-50">
+                  <div className="flex items-center justify-end gap-3 p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
                     {footer}
                   </div>
                 )}
@@ -158,11 +158,11 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
       closeOnOverlayClick={!isLoading}
       showCloseButton={!isLoading}
     >
-      <p className="text-gray-600">{message}</p>
+      <p className="text-gray-600 dark:text-gray-300">{message}</p>
       <div className="flex items-center justify-end gap-3 mt-6">
         <button
           type="button"
-          className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50"
+          className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50 dark:text-gray-300 dark:bg-gray-700 dark:border-gray-600 dark:hover:bg-gray-600"
           onClick={onClose}
           disabled={isLoading}
         >

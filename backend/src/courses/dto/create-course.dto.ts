@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNotEmpty, IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, IsUUID, IsInt, IsNumber } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class CreateCourseDto {
   @ApiProperty({
@@ -73,4 +74,21 @@ export class CreateCourseDto {
   @IsString()
   @IsNotEmpty({ message: 'Semester is required' })
   semester: string;
+
+  @ApiPropertyOptional({
+    example: '2026',
+    description: 'Academic year',
+  })
+  @IsString()
+  @IsOptional()
+  academicYear?: string;
+
+  @ApiPropertyOptional({
+    example: 3,
+    description: 'Credit hours',
+  })
+  @IsNumber()
+  @IsOptional()
+  @Type(() => Number)
+  creditHours?: number;
 }

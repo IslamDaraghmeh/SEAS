@@ -187,6 +187,7 @@ export class AuthService {
       include: {
         student: true,
         teacher: true,
+        admin: true,
       },
     });
 
@@ -262,7 +263,7 @@ export class AuthService {
   ) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      include: { student: true, teacher: true },
+      include: { student: true, teacher: true, admin: true },
     });
 
     if (!user) {
@@ -305,6 +306,18 @@ export class AuthService {
       await this.prisma.teacher.update({
         where: { id: user.teacher.id },
         data: profileData,
+      });
+    } else if (user.role === UserRole.ADMIN) {
+      // Admins only have name fields. Upsert because an existing admin
+      // account may not have an Admin profile row yet.
+      await this.prisma.admin.upsert({
+        where: { userId: user.id },
+        update: profileData,
+        create: {
+          userId: user.id,
+          nameAr: profileData.nameAr ?? '',
+          nameEn: profileData.nameEn ?? '',
+        },
       });
     }
 

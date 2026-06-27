@@ -144,6 +144,8 @@ function transformExamFromBackend(data: any): Exam {
 
 // Transform backend question response to frontend format
 function transformQuestionFromBackend(data: any): Question {
+  const questionType = (data.type?.toLowerCase() || 'multiple_choice') as Question['type'];
+
   // Handle options - can be array of strings or array of objects with text/content
   let options: string[] | undefined;
   if (data.options && Array.isArray(data.options)) {
@@ -152,15 +154,33 @@ function transformQuestionFromBackend(data: any): Question {
     );
   }
 
-  // Handle correctAnswer - can be index or option ID
+  // Handle correctAnswer - determine from various sources
   let correctAnswer: string | number | undefined;
+
+  // First check if correctAnswer is directly provided
   if (data.correctAnswer !== undefined && data.correctAnswer !== null) {
     correctAnswer = data.correctAnswer;
-  } else if (data.correctOptionId) {
-    // Find index of correct option if we have option IDs
+  }
+  // Check for correctOptionId
+  else if (data.correctOptionId) {
     const correctIndex = data.options?.findIndex((opt: any) => opt.id === data.correctOptionId);
     if (correctIndex !== undefined && correctIndex >= 0) {
       correctAnswer = correctIndex;
+    }
+  }
+  // Check for isCorrect flag on options (for MULTIPLE_CHOICE and TRUE_FALSE)
+  else if (data.options && Array.isArray(data.options)) {
+    const correctIndex = data.options.findIndex((opt: any) => opt.isCorrect === true);
+    if (correctIndex >= 0) {
+      if (questionType === 'true_false') {
+        // For true/false, convert to 'true' or 'false' string based on option text
+        const correctOption = data.options[correctIndex];
+        const optionText = (correctOption.textEn || correctOption.textAr || '').toLowerCase();
+        correctAnswer = optionText.includes('true') || optionText.includes('صحيح') ? 'true' : 'false';
+      } else {
+        // For multiple choice, use the index
+        correctAnswer = correctIndex;
+      }
     }
   }
 
@@ -168,7 +188,7 @@ function transformQuestionFromBackend(data: any): Question {
     id: data.id,
     examId: data.examId || '',
     text: data.textEn || data.textAr || data.text || '',
-    type: data.type?.toLowerCase() || 'multiple_choice',
+    type: questionType,
     options,
     correctAnswer,
     marks: data.points || data.marks || 1,
@@ -360,6 +380,14 @@ export const examService = {
    */
   async publishExam(examId: string): Promise<Exam> {
     const response = await api.post<Exam>(`/exams/${examId}/publish`);
+    return response.data;
+  },
+
+  /**
+   * Activate a published exam (makes it available for students to start)
+   */
+  async activateExam(examId: string): Promise<Exam> {
+    const response = await api.patch<Exam>(`/exams/${examId}/activate`);
     return response.data;
   },
 

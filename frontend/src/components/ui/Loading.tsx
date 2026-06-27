@@ -30,7 +30,7 @@ const Loading: React.FC<LoadingProps> = ({
   const Spinner = () => (
     <div className={`flex flex-col items-center justify-center ${className}`}>
       <svg
-        className={`animate-spin text-primary-600 ${sizeStyles[size].spinner}`}
+        className={`animate-spin text-primary-600 dark:text-primary-400 ${sizeStyles[size].spinner}`}
         xmlns="http://www.w3.org/2000/svg"
         fill="none"
         viewBox="0 0 24 24"
@@ -50,7 +50,7 @@ const Loading: React.FC<LoadingProps> = ({
         />
       </svg>
       {displayText && (
-        <p className={`mt-2 text-gray-600 ${sizeStyles[size].text}`}>
+        <p className={`mt-2 text-gray-600 dark:text-gray-400 ${sizeStyles[size].text}`}>
           {displayText}
         </p>
       )}
@@ -59,7 +59,7 @@ const Loading: React.FC<LoadingProps> = ({
 
   if (fullScreen) {
     return (
-      <div className="fixed inset-0 flex items-center justify-center bg-white z-50">
+      <div className="fixed inset-0 flex items-center justify-center bg-white dark:bg-gray-900 z-50">
         <Spinner />
       </div>
     );
@@ -67,7 +67,7 @@ const Loading: React.FC<LoadingProps> = ({
 
   if (overlay) {
     return (
-      <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-75 z-10">
+      <div className="absolute inset-0 flex items-center justify-center bg-white/75 dark:bg-gray-900/75 z-10">
         <Spinner />
       </div>
     );
@@ -92,7 +92,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
   height,
   animation = 'pulse',
 }) => {
-  const baseStyles = 'bg-gray-200';
+  const baseStyles = 'bg-gray-200 dark:bg-gray-700';
   const animationStyles = {
     pulse: 'animate-pulse',
     wave: 'animate-shimmer',
@@ -123,7 +123,7 @@ export const SkeletonCard: React.FC<{ className?: string }> = ({
 }) => {
   return (
     <div
-      className={`bg-white rounded-lg border border-gray-200 p-4 ${className}`}
+      className={`bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 ${className}`}
     >
       <Skeleton variant="rectangular" height={20} width="60%" className="mb-3" />
       <Skeleton variant="text" className="mb-2" />
@@ -142,7 +142,7 @@ export const SkeletonTable: React.FC<{
   return (
     <div className={`w-full ${className}`}>
       {/* Header */}
-      <div className="flex gap-4 p-4 border-b border-gray-200 bg-gray-50">
+      <div className="flex gap-4 p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
         {Array.from({ length: columns }).map((_, i) => (
           <Skeleton key={i} variant="text" width={`${100 / columns}%`} />
         ))}
@@ -151,7 +151,7 @@ export const SkeletonTable: React.FC<{
       {Array.from({ length: rows }).map((_, rowIndex) => (
         <div
           key={rowIndex}
-          className="flex gap-4 p-4 border-b border-gray-100"
+          className="flex gap-4 p-4 border-b border-gray-100 dark:border-gray-700"
         >
           {Array.from({ length: columns }).map((_, colIndex) => (
             <Skeleton

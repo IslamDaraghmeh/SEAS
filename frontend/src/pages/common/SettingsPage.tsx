@@ -4,7 +4,6 @@ import { useMutation } from '@tanstack/react-query';
 import {
   LanguageIcon,
   LockClosedIcon,
-  BellIcon,
   ShieldCheckIcon,
   SunIcon,
   MoonIcon,
@@ -216,57 +215,6 @@ const SettingsPage: React.FC = () => {
             >
               {t('common.edit')}
             </Button>
-          </div>
-
-          {/* Two-Factor Authentication (placeholder) */}
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-white rounded-lg border border-gray-200">
-                <ShieldCheckIcon className="h-5 w-5 text-gray-600" />
-              </div>
-              <div>
-                <p className="font-medium text-gray-900">{t('settings.twoFactor')}</p>
-                <p className="text-sm text-gray-500">{t('settings.twoFactorDesc')}</p>
-              </div>
-            </div>
-            <span className="px-3 py-1 text-sm font-medium bg-gray-200 text-gray-600 rounded-full">
-              {t('common.inactive')}
-            </span>
-          </div>
-        </div>
-      </Card>
-
-      {/* Notifications Settings */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BellIcon className="h-5 w-5 text-primary-600" />
-            {t('settings.notifications')}
-          </CardTitle>
-        </CardHeader>
-        <div className="space-y-4">
-          {/* Email Notifications */}
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-            <div>
-              <p className="font-medium text-gray-900">{t('settings.emailNotifications')}</p>
-              <p className="text-sm text-gray-500">{t('settings.emailNotificationsDesc')}</p>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" className="sr-only peer" defaultChecked />
-              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
-            </label>
-          </div>
-
-          {/* Exam Reminders */}
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-            <div>
-              <p className="font-medium text-gray-900">{t('settings.examReminders')}</p>
-              <p className="text-sm text-gray-500">{t('settings.examRemindersDesc')}</p>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" className="sr-only peer" defaultChecked />
-              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
-            </label>
           </div>
         </div>
       </Card>

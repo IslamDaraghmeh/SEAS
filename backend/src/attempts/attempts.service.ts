@@ -257,6 +257,22 @@ export class AttemptsService {
       throw new BadRequestException('Exam attempt is not in progress');
     }
 
+    // Check if verification is required and if student has been verified
+    if (attempt.exam.requireVerification) {
+      const successfulVerification = await this.prisma.verificationLog.findFirst({
+        where: {
+          attemptId: attempt.id,
+          isVerified: true,
+        },
+      });
+
+      if (!successfulVerification) {
+        throw new BadRequestException(
+          'Face verification is required before submitting the exam. Please complete verification first.'
+        );
+      }
+    }
+
     // Auto-grade multiple choice and true/false questions
     let totalScore = 0;
     let hasEssayQuestions = false;
@@ -455,6 +471,12 @@ export class AttemptsService {
               nameEn: true,
             },
           },
+          _count: {
+            select: {
+              answers: true,
+              alerts: true,
+            },
+          },
         },
       }),
       this.prisma.examAttempt.count({ where }),
@@ -462,10 +484,12 @@ export class AttemptsService {
 
     return {
       data: attempts,
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
     };
   }
 

@@ -193,6 +193,31 @@ export class VerificationService {
     return log;
   }
 
+  async getVerificationStatus(attemptId: string) {
+    // Check if there's at least one successful verification for this attempt
+    const successfulVerification = await this.prisma.verificationLog.findFirst({
+      where: {
+        attemptId,
+        isVerified: true,
+      },
+      orderBy: { verifiedAt: 'desc' },
+    });
+
+    if (successfulVerification) {
+      return {
+        isVerified: true,
+        matchScore: successfulVerification.matchScore,
+        verifiedAt: successfulVerification.verifiedAt,
+      };
+    }
+
+    return {
+      isVerified: false,
+      matchScore: null,
+      verifiedAt: null,
+    };
+  }
+
   async createAlert(alertDto: CreateAlertDto) {
     const { attemptId, screenshot, ...alertData } = alertDto;
 

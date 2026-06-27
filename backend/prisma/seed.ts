@@ -22,6 +22,15 @@ async function main() {
       role: UserRole.ADMIN,
     },
   });
+  await prisma.admin.upsert({
+    where: { userId: admin.id },
+    update: {},
+    create: {
+      userId: admin.id,
+      nameAr: 'مدير النظام',
+      nameEn: 'System Administrator',
+    },
+  });
   console.log('Admin user created:', admin.email);
 
   // Create teacher

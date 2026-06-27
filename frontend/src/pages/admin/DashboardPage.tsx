@@ -20,30 +20,30 @@ import { formatDistanceToNow } from 'date-fns';
 const getActivityIcon = (type: RecentActivity['type']) => {
   switch (type) {
     case 'student_registered':
-      return <UserPlusIcon className="h-5 w-5 text-blue-600" />;
+      return <UserPlusIcon className="h-5 w-5 text-blue-600 dark:text-blue-400" />;
     case 'teacher_registered':
-      return <UserPlusIcon className="h-5 w-5 text-green-600" />;
+      return <UserPlusIcon className="h-5 w-5 text-green-600 dark:text-green-400" />;
     case 'exam_created':
-      return <DocumentPlusIcon className="h-5 w-5 text-purple-600" />;
+      return <DocumentPlusIcon className="h-5 w-5 text-purple-600 dark:text-purple-400" />;
     case 'exam_completed':
-      return <CheckCircleIcon className="h-5 w-5 text-green-600" />;
+      return <CheckCircleIcon className="h-5 w-5 text-green-600 dark:text-green-400" />;
     default:
-      return <UsersIcon className="h-5 w-5 text-primary-600" />;
+      return <UsersIcon className="h-5 w-5 text-primary-600 dark:text-primary-400" />;
   }
 };
 
 const getActivityBgColor = (type: RecentActivity['type']) => {
   switch (type) {
     case 'student_registered':
-      return 'bg-blue-100';
+      return 'bg-blue-100 dark:bg-blue-900/30';
     case 'teacher_registered':
-      return 'bg-green-100';
+      return 'bg-green-100 dark:bg-green-900/30';
     case 'exam_created':
-      return 'bg-purple-100';
+      return 'bg-purple-100 dark:bg-purple-900/30';
     case 'exam_completed':
-      return 'bg-green-100';
+      return 'bg-green-100 dark:bg-green-900/30';
     default:
-      return 'bg-primary-100';
+      return 'bg-primary-100 dark:bg-primary-900/30';
   }
 };
 
@@ -120,12 +120,12 @@ const AdminDashboardPage: React.FC = () => {
         <Link to="/admin/students">
           <Card hoverable className="h-full">
             <div className="flex items-center gap-4">
-              <div className="p-3 bg-blue-100 rounded-lg">
-                <UsersIcon className="h-8 w-8 text-blue-600" />
+              <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                <UsersIcon className="h-8 w-8 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900">{t('nav.students')}</h3>
-                <p className="text-sm text-gray-500">
+                <h3 className="font-semibold text-gray-900 dark:text-white">{t('nav.students')}</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                   {dashboardStats.totalStudents} {t('student.title')}
                 </p>
               </div>
@@ -135,12 +135,12 @@ const AdminDashboardPage: React.FC = () => {
         <Link to="/admin/teachers">
           <Card hoverable className="h-full">
             <div className="flex items-center gap-4">
-              <div className="p-3 bg-green-100 rounded-lg">
-                <UsersIcon className="h-8 w-8 text-green-600" />
+              <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                <UsersIcon className="h-8 w-8 text-green-600 dark:text-green-400" />
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900">{t('nav.teachers')}</h3>
-                <p className="text-sm text-gray-500">
+                <h3 className="font-semibold text-gray-900 dark:text-white">{t('nav.teachers')}</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                   {dashboardStats.totalTeachers} {t('teacher.title')}
                 </p>
               </div>
@@ -150,12 +150,12 @@ const AdminDashboardPage: React.FC = () => {
         <Link to="/admin/courses">
           <Card hoverable className="h-full">
             <div className="flex items-center gap-4">
-              <div className="p-3 bg-purple-100 rounded-lg">
-                <BookOpenIcon className="h-8 w-8 text-purple-600" />
+              <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+                <BookOpenIcon className="h-8 w-8 text-purple-600 dark:text-purple-400" />
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900">{t('nav.courses')}</h3>
-                <p className="text-sm text-gray-500">
+                <h3 className="font-semibold text-gray-900 dark:text-white">{t('nav.courses')}</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                   {dashboardStats.totalCourses} {t('course.title')}
                 </p>
               </div>
@@ -173,30 +173,30 @@ const AdminDashboardPage: React.FC = () => {
           </CardHeader>
 
           <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+            <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
               <div className="flex items-center gap-3">
-                <AcademicCapIcon className="h-6 w-6 text-primary-600" />
-                <span className="text-gray-700">{t('dashboard.activeExams')}</span>
+                <AcademicCapIcon className="h-6 w-6 text-primary-600 dark:text-primary-400" />
+                <span className="text-gray-700 dark:text-gray-300">{t('dashboard.activeExams')}</span>
               </div>
-              <span className="text-xl font-bold text-gray-900">
+              <span className="text-xl font-bold text-gray-900 dark:text-white">
                 {dashboardStats.activeExams}
               </span>
             </div>
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+            <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
               <div className="flex items-center gap-3">
-                <ChartBarIcon className="h-6 w-6 text-green-600" />
-                <span className="text-gray-700">{t('dashboard.passRate')}</span>
+                <ChartBarIcon className="h-6 w-6 text-green-600 dark:text-green-400" />
+                <span className="text-gray-700 dark:text-gray-300">{t('dashboard.passRate')}</span>
               </div>
-              <span className="text-xl font-bold text-green-600">
+              <span className="text-xl font-bold text-green-600 dark:text-green-400">
                 {dashboardStats.passRate}%
               </span>
             </div>
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+            <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
               <div className="flex items-center gap-3">
-                <AcademicCapIcon className="h-6 w-6 text-blue-600" />
-                <span className="text-gray-700">{t('dashboard.completedExams')}</span>
+                <AcademicCapIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                <span className="text-gray-700 dark:text-gray-300">{t('dashboard.completedExams')}</span>
               </div>
-              <span className="text-xl font-bold text-gray-900">
+              <span className="text-xl font-bold text-gray-900 dark:text-white">
                 {dashboardStats.completedExams}
               </span>
             </div>
@@ -214,7 +214,7 @@ const AdminDashboardPage: React.FC = () => {
               dashboardStats.recentActivity.map((activity) => (
                 <div
                   key={activity.id}
-                  className="flex items-center gap-4 p-3 hover:bg-gray-50 rounded-lg"
+                  className="flex items-center gap-4 p-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg"
                 >
                   <div
                     className={`w-10 h-10 ${getActivityBgColor(activity.type)} rounded-full flex items-center justify-center`}
@@ -222,17 +222,17 @@ const AdminDashboardPage: React.FC = () => {
                     {getActivityIcon(activity.type)}
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-900">
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">
                       {activity.description}
                     </p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
                       {formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true })}
                     </p>
                   </div>
                 </div>
               ))
             ) : (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                 {t('common.noData')}
               </div>
             )}

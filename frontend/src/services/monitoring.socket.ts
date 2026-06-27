@@ -146,9 +146,23 @@ class MonitoringSocketService {
         return;
       }
 
-      // Use WS_URL without /api suffix, or derive from API_URL
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-      const baseUrl = import.meta.env.VITE_WS_URL || apiUrl.replace('/api', '');
+      // Determine WebSocket URL
+      // In production with nginx proxy, use same origin (nginx proxies /monitoring to backend)
+      // In development, use VITE_WS_URL or fallback to API URL without /api suffix
+      let baseUrl: string;
+
+      if (import.meta.env.VITE_WS_URL) {
+        // Use configured WebSocket URL (convert ws:// to http:// for Socket.IO)
+        baseUrl = import.meta.env.VITE_WS_URL.replace('ws://', 'http://').replace('wss://', 'https://');
+      } else if (import.meta.env.VITE_API_URL) {
+        // Derive from API URL by removing /api suffix
+        baseUrl = import.meta.env.VITE_API_URL.replace('/api', '');
+      } else {
+        // Fallback: use same origin (works with nginx proxy)
+        baseUrl = window.location.origin;
+      }
+
+      console.log('Connecting to monitoring WebSocket at:', `${baseUrl}/monitoring`);
 
       this.socket = io(`${baseUrl}/monitoring`, {
         auth: { token },
@@ -156,6 +170,8 @@ class MonitoringSocketService {
         reconnection: true,
         reconnectionAttempts: this.maxReconnectAttempts,
         reconnectionDelay: 1000,
+        // Add timeout for connection
+        timeout: 10000,
       });
 
       this.socket.on('connect', () => {
@@ -241,12 +257,21 @@ class MonitoringSocketService {
     }
 
     return new Promise((resolve) => {
+      // Set timeout in case acknowledgement never comes
+      const timeout = setTimeout(() => {
+        console.error('joinExamRoom timeout - no response from server');
+        resolve(null);
+      }, 10000);
+
       this.socket!.emit('joinExamRoom', { examId }, (response: any) => {
-        if (response.success) {
+        clearTimeout(timeout);
+        console.log('joinExamRoom response:', response);
+
+        if (response && response.success) {
           this.currentExamId = examId;
           resolve(response.data);
         } else {
-          console.error('Failed to join exam room:', response.error);
+          console.error('Failed to join exam room:', response?.error || 'Unknown error');
           resolve(null);
         }
       });

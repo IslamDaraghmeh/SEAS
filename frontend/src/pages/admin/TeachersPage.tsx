@@ -13,6 +13,7 @@ import {
   EnvelopeIcon,
   CheckCircleIcon,
   XCircleIcon,
+  KeyIcon,
 } from '@heroicons/react/24/outline';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
@@ -39,8 +40,17 @@ const updateTeacherSchema = z.object({
   phone: z.string().optional(),
 });
 
+const changePasswordSchema = z.object({
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+  confirmPassword: z.string().min(6, 'Confirm password is required'),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ['confirmPassword'],
+});
+
 type CreateTeacherFormData = z.infer<typeof createTeacherSchema>;
 type UpdateTeacherFormData = z.infer<typeof updateTeacherSchema>;
+type ChangePasswordFormData = z.infer<typeof changePasswordSchema>;
 
 const AdminTeachersPage: React.FC = () => {
   const { t } = useTranslation();
@@ -52,6 +62,7 @@ const AdminTeachersPage: React.FC = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [editTeacher, setEditTeacher] = useState<Teacher | null>(null);
   const [deleteTeacher, setDeleteTeacher] = useState<Teacher | null>(null);
+  const [passwordTeacher, setPasswordTeacher] = useState<Teacher | null>(null);
 
   // Fetch teachers
   const { data, isLoading, error } = useQuery({
@@ -118,6 +129,20 @@ const AdminTeachersPage: React.FC = () => {
     },
   });
 
+  // Change password mutation
+  const changePasswordMutation = useMutation({
+    mutationFn: ({ id, password }: { id: string; password: string }) =>
+      teacherService.resetPassword(id, password),
+    onSuccess: () => {
+      setPasswordTeacher(null);
+      toast.success(t('teacher.passwordChanged') || 'Password changed successfully');
+      passwordForm.reset();
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || 'Failed to change password');
+    },
+  });
+
   // Form for creating teacher
   const createForm = useForm<CreateTeacherFormData>({
     resolver: zodResolver(createTeacherSchema),
@@ -126,6 +151,11 @@ const AdminTeachersPage: React.FC = () => {
   // Form for editing teacher
   const editForm = useForm<UpdateTeacherFormData>({
     resolver: zodResolver(updateTeacherSchema),
+  });
+
+  // Form for changing password
+  const passwordForm = useForm<ChangePasswordFormData>({
+    resolver: zodResolver(changePasswordSchema),
   });
 
   // Handle edit modal open
@@ -148,6 +178,13 @@ const AdminTeachersPage: React.FC = () => {
   const onEditSubmit = (data: UpdateTeacherFormData) => {
     if (editTeacher) {
       updateMutation.mutate({ id: editTeacher.id, data });
+    }
+  };
+
+  // Handle password change submit
+  const onPasswordSubmit = (data: ChangePasswordFormData) => {
+    if (passwordTeacher) {
+      changePasswordMutation.mutate({ id: passwordTeacher.id, password: data.password });
     }
   };
 
@@ -178,8 +215,8 @@ const AdminTeachersPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t('teacher.title')}</h1>
-          <p className="text-gray-500 mt-1">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('teacher.title')}</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">
             {data?.meta?.total || 0} {t('teacher.title')}
           </p>
         </div>
@@ -222,27 +259,27 @@ const AdminTeachersPage: React.FC = () => {
       <Card padding="none">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
+            <thead className="bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
               <tr>
-                <th className="text-start py-3 px-4 text-sm font-medium text-gray-500">
+                <th className="text-start py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-300">
                   {t('common.name')}
                 </th>
-                <th className="text-start py-3 px-4 text-sm font-medium text-gray-500">
+                <th className="text-start py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-300">
                   {t('common.email')}
                 </th>
-                <th className="text-start py-3 px-4 text-sm font-medium text-gray-500">
+                <th className="text-start py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-300">
                   {t('teacher.department')}
                 </th>
-                <th className="text-start py-3 px-4 text-sm font-medium text-gray-500">
+                <th className="text-start py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-300">
                   {t('common.phone')}
                 </th>
-                <th className="text-start py-3 px-4 text-sm font-medium text-gray-500">
+                <th className="text-start py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-300">
                   {t('teacher.assignedCourses')}
                 </th>
-                <th className="text-start py-3 px-4 text-sm font-medium text-gray-500">
+                <th className="text-start py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-300">
                   {t('common.status')}
                 </th>
-                <th className="text-start py-3 px-4 text-sm font-medium text-gray-500">
+                <th className="text-start py-3 px-4 text-sm font-medium text-gray-500 dark:text-gray-300">
                   {t('common.actions')}
                 </th>
               </tr>
@@ -251,35 +288,35 @@ const AdminTeachersPage: React.FC = () => {
               {teachers.map((teacher) => (
                 <tr
                   key={teacher.id}
-                  className="border-b border-gray-100 hover:bg-gray-50"
+                  className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50"
                 >
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                        <span className="text-green-700 font-medium">
+                      <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                        <span className="text-green-700 dark:text-green-400 font-medium">
                           {teacher.nameEn?.charAt(0) || 'T'}
                         </span>
                       </div>
                       <div>
-                        <p className="font-medium text-gray-900">
+                        <p className="font-medium text-gray-900 dark:text-white">
                           {teacher.nameEn}
                         </p>
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
                           {teacher.nameAr}
                         </p>
                       </div>
                     </div>
                   </td>
-                  <td className="py-3 px-4 text-sm text-gray-600">
+                  <td className="py-3 px-4 text-sm text-gray-600 dark:text-gray-400">
                     {teacher.user?.email}
                   </td>
-                  <td className="py-3 px-4 text-sm text-gray-600">
+                  <td className="py-3 px-4 text-sm text-gray-600 dark:text-gray-400">
                     {teacher.department || '-'}
                   </td>
-                  <td className="py-3 px-4 text-sm text-gray-600">
+                  <td className="py-3 px-4 text-sm text-gray-600 dark:text-gray-400">
                     {teacher.phone || '-'}
                   </td>
-                  <td className="py-3 px-4 text-sm text-gray-600">
+                  <td className="py-3 px-4 text-sm text-gray-600 dark:text-gray-400">
                     {teacher._count?.courses || 0}
                   </td>
                   <td className="py-3 px-4">
@@ -290,8 +327,8 @@ const AdminTeachersPage: React.FC = () => {
                       })}
                       className={`px-2 py-1 text-xs font-medium rounded flex items-center gap-1 ${
                         teacher.user?.isActive
-                          ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
                       }`}
                     >
                       {teacher.user?.isActive ? (
@@ -308,13 +345,23 @@ const AdminTeachersPage: React.FC = () => {
                         variant="ghost"
                         size="sm"
                         onClick={() => handleEditOpen(teacher)}
+                        title={t('common.edit')}
                       >
                         <PencilIcon className="h-4 w-4" />
                       </Button>
                       <Button
                         variant="ghost"
                         size="sm"
+                        onClick={() => setPasswordTeacher(teacher)}
+                        title={t('teacher.changePassword') || 'Change Password'}
+                      >
+                        <KeyIcon className="h-4 w-4 text-amber-500" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={() => setDeleteTeacher(teacher)}
+                        title={t('common.delete')}
                       >
                         <TrashIcon className="h-4 w-4 text-red-500" />
                       </Button>
@@ -328,8 +375,8 @@ const AdminTeachersPage: React.FC = () => {
 
         {teachers.length === 0 && (
           <div className="text-center py-12">
-            <UsersIcon className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
+            <UsersIcon className="h-16 w-16 mx-auto mb-4 text-gray-300 dark:text-gray-600" />
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
               {t('common.noData')}
             </h3>
           </div>
@@ -337,7 +384,7 @@ const AdminTeachersPage: React.FC = () => {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-center gap-2 py-4 border-t border-gray-100">
+          <div className="flex items-center justify-center gap-2 py-4 border-t border-gray-100 dark:border-gray-700">
             <Button
               variant="outline"
               size="sm"
@@ -346,7 +393,7 @@ const AdminTeachersPage: React.FC = () => {
             >
               {t('common.previous')}
             </Button>
-            <span className="text-sm text-gray-600">
+            <span className="text-sm text-gray-600 dark:text-gray-400">
               {page} / {totalPages}
             </span>
             <Button
@@ -481,6 +528,54 @@ const AdminTeachersPage: React.FC = () => {
         cancelText={t('common.cancel')}
         variant="danger"
       />
+
+      {/* Change Password Modal */}
+      <Modal
+        isOpen={!!passwordTeacher}
+        onClose={() => {
+          setPasswordTeacher(null);
+          passwordForm.reset();
+        }}
+        title={t('teacher.changePassword') || 'Change Password'}
+        size="sm"
+      >
+        <div className="mb-4">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            {t('teacher.changePasswordFor') || 'Change password for'}: <strong>{passwordTeacher?.nameEn}</strong>
+          </p>
+        </div>
+        <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-4">
+          <Input
+            label={t('auth.newPassword') || 'New Password'}
+            type="password"
+            leftIcon={<KeyIcon className="h-5 w-5" />}
+            error={passwordForm.formState.errors.password?.message}
+            {...passwordForm.register('password')}
+          />
+          <Input
+            label={t('auth.confirmPassword') || 'Confirm Password'}
+            type="password"
+            leftIcon={<KeyIcon className="h-5 w-5" />}
+            error={passwordForm.formState.errors.confirmPassword?.message}
+            {...passwordForm.register('confirmPassword')}
+          />
+          <div className="flex justify-end gap-3 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setPasswordTeacher(null);
+                passwordForm.reset();
+              }}
+            >
+              {t('common.cancel')}
+            </Button>
+            <Button type="submit" isLoading={changePasswordMutation.isPending}>
+              {t('common.save')}
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 };

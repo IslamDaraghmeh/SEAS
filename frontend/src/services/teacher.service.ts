@@ -106,6 +106,13 @@ export const teacherService = {
     const response = await api.patch<Teacher>(`/teachers/${id}/activate`);
     return response.data;
   },
+
+  /**
+   * Reset a teacher's password
+   */
+  async resetPassword(id: string, password: string): Promise<void> {
+    await api.patch(`/teachers/${id}/reset-password`, { password });
+  },
 };
 
 export default teacherService;

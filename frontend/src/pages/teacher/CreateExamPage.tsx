@@ -121,8 +121,59 @@ const CreateExamPage: React.FC = () => {
     }
   }, [examData, setValue]);
 
+  // Prepare question data for backend
+  const prepareQuestionData = (question: Question, targetExamId: string, order: number) => {
+    const questionType = question.type.toUpperCase().replace('_', '_');
+
+    // Handle options based on question type
+    let options;
+    let correctAnswer;
+
+    if (questionType === 'TRUE_FALSE') {
+      // Auto-generate True/False options for true_false questions
+      const isTrue = String(question.correctAnswer).toLowerCase() === 'true' || question.correctAnswer === 0;
+      options = [
+        { textAr: 'صحيح', textEn: 'True', isCorrect: isTrue, order: 0 },
+        { textAr: 'خطأ', textEn: 'False', isCorrect: !isTrue, order: 1 },
+      ];
+    } else if (questionType === 'MULTIPLE_CHOICE') {
+      // Filter out empty options and map with isCorrect
+      const validOptions = (question.options || []).filter(opt => opt && opt.trim() !== '');
+      if (validOptions.length >= 2) {
+        options = validOptions.map((opt, idx) => ({
+          textAr: opt,
+          textEn: opt,
+          isCorrect: question.correctAnswer === idx,
+          order: idx,
+        }));
+
+        // Ensure at least one option is marked as correct
+        const hasCorrect = options.some(opt => opt.isCorrect);
+        if (!hasCorrect && options.length > 0) {
+          options[0].isCorrect = true; // Default to first option if none selected
+        }
+      }
+    } else if (questionType === 'SHORT_ANSWER' || questionType === 'ESSAY') {
+      // For text-based questions, use correctAnswer field
+      correctAnswer = typeof question.correctAnswer === 'string' ? question.correctAnswer : undefined;
+    }
+
+    return {
+      examId: targetExamId,
+      textAr: question.text,
+      textEn: question.text,
+      type: questionType,
+      points: question.marks || 1,
+      order,
+      options,
+      correctAnswer,
+    };
+  };
+
   // Save questions for an exam
   const saveQuestions = async (targetExamId: string, questionsToSave: Question[]) => {
+    const errors: string[] = [];
+
     // Get existing questions if editing
     let existingQuestionIds: string[] = [];
     if (isEditing && examData?.questions) {
@@ -134,8 +185,9 @@ const CreateExamPage: React.FC = () => {
       if (!questionsToSave.find(q => q.id === existingId)) {
         try {
           await examService.deleteQuestion(targetExamId, existingId);
-        } catch (error) {
+        } catch (error: any) {
           console.error('Failed to delete question:', error);
+          errors.push(`Failed to delete question: ${error?.response?.data?.message || error.message}`);
         }
       }
     }
@@ -143,39 +195,43 @@ const CreateExamPage: React.FC = () => {
     // Add or update questions
     for (let i = 0; i < questionsToSave.length; i++) {
       const question = questionsToSave[i];
-      const questionData = {
-        examId: targetExamId, // Required by backend DTO
-        textAr: question.text,
-        textEn: question.text,
-        type: question.type.toUpperCase(),
-        points: question.marks || 1,
-        order: i,
-        options: question.options?.map((opt, idx) => ({
-          textAr: opt,
-          textEn: opt,
-          isCorrect: question.correctAnswer === idx,
-          order: idx,
-        })),
-        correctAnswer: typeof question.correctAnswer === 'string' ? question.correctAnswer : undefined,
-      };
+
+      // Validate question before sending
+      if (!question.text || question.text.trim() === '') {
+        errors.push(`Question ${i + 1}: Text is required`);
+        continue;
+      }
+
+      const questionType = question.type.toUpperCase();
+      if (questionType === 'MULTIPLE_CHOICE') {
+        const validOptions = (question.options || []).filter(opt => opt && opt.trim() !== '');
+        if (validOptions.length < 2) {
+          errors.push(`Question ${i + 1}: Multiple choice questions require at least 2 options`);
+          continue;
+        }
+      }
+
+      const questionData = prepareQuestionData(question, targetExamId, i);
 
       try {
         if (question.id.startsWith('temp-')) {
           // New question - add it
-          console.log('Adding question:', questionData);
           await examService.addQuestion(targetExamId, questionData as any);
         } else if (existingQuestionIds.includes(question.id)) {
           // Existing question - update it
-          console.log('Updating question:', question.id, questionData);
           await examService.updateQuestion(targetExamId, question.id, questionData as any);
         } else {
           // New question with non-temp id - add it
-          console.log('Adding new question:', questionData);
           await examService.addQuestion(targetExamId, questionData as any);
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Failed to save question:', error);
+        errors.push(`Question ${i + 1}: ${error?.response?.data?.message || error.message || 'Failed to save'}`);
       }
+    }
+
+    if (errors.length > 0) {
+      throw new Error(errors.join('\n'));
     }
   };
 
@@ -271,10 +327,10 @@ const CreateExamPage: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
             {isEditing ? t('exam.editExam') : t('exam.createExam')}
           </h1>
-          <p className="text-gray-500 mt-1">{t('exam.examDetails')}</p>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">{t('exam.examDetails')}</p>
         </div>
       </div>
 
@@ -367,10 +423,10 @@ const CreateExamPage: React.FC = () => {
               <label className="flex items-center gap-2">
                 <input
                   type="checkbox"
-                  className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                  className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-primary-600 focus:ring-primary-500"
                   {...register('requiresVerification')}
                 />
-                <span className="text-sm text-gray-700">{t('verification.verificationRequired')}</span>
+                <span className="text-sm text-gray-700 dark:text-gray-300">{t('verification.verificationRequired')}</span>
               </label>
               {watch('requiresVerification') && (
                 <Input
@@ -408,18 +464,18 @@ const CreateExamPage: React.FC = () => {
               {questions.map((question, index) => (
                 <div
                   key={question.id}
-                  className="p-4 bg-gray-50 rounded-lg flex items-start justify-between"
+                  className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg flex items-start justify-between"
                 >
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="flex items-center justify-center w-8 h-8 bg-primary-100 text-primary-700 font-bold rounded-full text-sm">
+                      <span className="flex items-center justify-center w-8 h-8 bg-primary-100 dark:bg-primary-900 text-primary-700 dark:text-primary-300 font-bold rounded-full text-sm">
                         {index + 1}
                       </span>
-                      <span className="text-sm text-gray-500">
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
                         {t(`exam.${question.type}`)} - {question.marks} {t('exam.marks')}
                       </span>
                     </div>
-                    <p className="mt-2 text-gray-800">{question.text}</p>
+                    <p className="mt-2 text-gray-800 dark:text-gray-200">{question.text}</p>
                   </div>
                   <div className="flex items-center gap-2 ms-4">
                     <Button
@@ -443,7 +499,7 @@ const CreateExamPage: React.FC = () => {
               ))}
             </div>
           ) : (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
               <p>{t('common.noData')}</p>
             </div>
           )}
@@ -473,11 +529,16 @@ const CreateExamPage: React.FC = () => {
                   label={t('exam.questionType')}
                   options={questionTypeOptions}
                   value={currentQuestion.type || 'multiple_choice'}
-                  onChange={(e) => setCurrentQuestion({
-                    ...currentQuestion,
-                    type: e.target.value as any,
-                    options: e.target.value === 'multiple_choice' ? ['', '', '', ''] : undefined,
-                  })}
+                  onChange={(e) => {
+                    const newType = e.target.value as any;
+                    setCurrentQuestion({
+                      ...currentQuestion,
+                      type: newType,
+                      options: newType === 'multiple_choice' ? ['', '', '', ''] : undefined,
+                      correctAnswer: newType === 'true_false' ? 'true' :
+                                    newType === 'multiple_choice' ? 0 : undefined,
+                    });
+                  }}
                 />
                 <Input
                   label={t('exam.marks')}
@@ -490,7 +551,7 @@ const CreateExamPage: React.FC = () => {
               {/* Options for Multiple Choice */}
               {currentQuestion.type === 'multiple_choice' && (
                 <div className="space-y-3">
-                  <label className="block text-sm font-medium text-gray-700">{t('exam.options')}</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('exam.options')}</label>
                   {(currentQuestion.options || ['', '', '', '']).map((option, index) => (
                     <div key={index} className="flex items-center gap-2">
                       <input
@@ -514,8 +575,37 @@ const CreateExamPage: React.FC = () => {
                 </div>
               )}
 
-              {/* Correct Answer for other types */}
-              {(currentQuestion.type === 'short_answer' || currentQuestion.type === 'true_false') && (
+              {/* True/False Options */}
+              {currentQuestion.type === 'true_false' && (
+                <div className="space-y-3">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('exam.correctAnswer')}</label>
+                  <div className="flex gap-4">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="trueFalseAnswer"
+                        checked={currentQuestion.correctAnswer === 'true' || currentQuestion.correctAnswer === 0}
+                        onChange={() => setCurrentQuestion({ ...currentQuestion, correctAnswer: 'true' })}
+                        className="w-4 h-4 text-primary-600"
+                      />
+                      <span className="text-gray-800 dark:text-gray-200">{t('common.true') || 'True'}</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="trueFalseAnswer"
+                        checked={currentQuestion.correctAnswer === 'false' || currentQuestion.correctAnswer === 1}
+                        onChange={() => setCurrentQuestion({ ...currentQuestion, correctAnswer: 'false' })}
+                        className="w-4 h-4 text-primary-600"
+                      />
+                      <span className="text-gray-800 dark:text-gray-200">{t('common.false') || 'False'}</span>
+                    </label>
+                  </div>
+                </div>
+              )}
+
+              {/* Correct Answer for short answer */}
+              {currentQuestion.type === 'short_answer' && (
                 <Input
                   label={t('exam.correctAnswer')}
                   value={currentQuestion.correctAnswer as string || ''}
@@ -524,7 +614,7 @@ const CreateExamPage: React.FC = () => {
               )}
 
               {/* Actions */}
-              <div className="flex justify-end gap-3 pt-4 border-t">
+              <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-600">
                 <Button
                   type="button"
                   variant="outline"

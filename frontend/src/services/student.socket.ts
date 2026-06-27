@@ -6,6 +6,13 @@ export interface VerificationRequest {
   timestamp: string;
 }
 
+export interface ManualVerificationUpdate {
+  approved: boolean;
+  verifiedBy: string;
+  notes?: string;
+  timestamp: string;
+}
+
 type EventCallback<T> = (data: T) => void;
 
 class StudentSocketService {
@@ -17,6 +24,7 @@ class StudentSocketService {
 
   // Event listeners
   private onVerificationRequestCallbacks: EventCallback<VerificationRequest>[] = [];
+  private onManualVerificationCallbacks: EventCallback<ManualVerificationUpdate>[] = [];
   private onDisconnectCallbacks: EventCallback<void>[] = [];
 
   connect(token: string): Promise<void> {
@@ -26,9 +34,23 @@ class StudentSocketService {
         return;
       }
 
-      // Use WS_URL without /api suffix, or derive from API_URL
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-      const baseUrl = import.meta.env.VITE_WS_URL || apiUrl.replace('/api', '');
+      // Determine WebSocket URL
+      // In production with nginx proxy, use same origin (nginx proxies /monitoring to backend)
+      // In development, use VITE_WS_URL or fallback to API URL without /api suffix
+      let baseUrl: string;
+
+      if (import.meta.env.VITE_WS_URL) {
+        // Use configured WebSocket URL (convert ws:// to http:// for Socket.IO)
+        baseUrl = import.meta.env.VITE_WS_URL.replace('ws://', 'http://').replace('wss://', 'https://');
+      } else if (import.meta.env.VITE_API_URL) {
+        // Derive from API URL by removing /api suffix
+        baseUrl = import.meta.env.VITE_API_URL.replace('/api', '');
+      } else {
+        // Fallback: use same origin (works with nginx proxy)
+        baseUrl = window.location.origin;
+      }
+
+      console.log('Student connecting to monitoring WebSocket at:', `${baseUrl}/monitoring`);
 
       this.socket = io(`${baseUrl}/monitoring`, {
         auth: { token },
@@ -79,6 +101,12 @@ class StudentSocketService {
       this.onVerificationRequestCallbacks.forEach(cb => cb(data));
     });
 
+    // Set up manual verification listener (when teacher manually verifies)
+    this.socket.on(`manualVerification:${attemptId}`, (data: ManualVerificationUpdate) => {
+      console.log('Manual verification received:', data);
+      this.onManualVerificationCallbacks.forEach(cb => cb(data));
+    });
+
     return new Promise((resolve) => {
       this.socket!.emit('studentJoinExam', { attemptId, examId }, (response: any) => {
         if (response.success) {
@@ -94,8 +122,9 @@ class StudentSocketService {
 
   leaveExam(): void {
     if (this.currentAttemptId) {
-      // Remove the verification listener
+      // Remove the verification listeners
       this.socket?.off(`verification:${this.currentAttemptId}`);
+      this.socket?.off(`manualVerification:${this.currentAttemptId}`);
     }
 
     this.stopFrameStreaming();
@@ -182,6 +211,15 @@ class StudentSocketService {
     };
   }
 
+  onManualVerification(callback: EventCallback<ManualVerificationUpdate>): () => void {
+    this.onManualVerificationCallbacks.push(callback);
+    return () => {
+      this.onManualVerificationCallbacks = this.onManualVerificationCallbacks.filter(
+        cb => cb !== callback
+      );
+    };
+  }
+
   onDisconnect(callback: EventCallback<void>): () => void {
     this.onDisconnectCallbacks.push(callback);
     return () => {
@@ -199,6 +237,7 @@ class StudentSocketService {
 
     // Clear callbacks
     this.onVerificationRequestCallbacks = [];
+    this.onManualVerificationCallbacks = [];
     this.onDisconnectCallbacks = [];
   }
 

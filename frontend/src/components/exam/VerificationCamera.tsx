@@ -19,10 +19,16 @@ import Button from '../ui/Button';
 import { verificationService } from '../../services/verification.service';
 import { studentSocket, VerificationRequest } from '../../services/student.socket';
 
+interface VerificationResult {
+  isVerified: boolean;
+  matchScore: number;
+  livenessScore?: number;
+}
+
 interface VerificationCameraProps {
   examId?: string;
   attemptId?: string;
-  onVerificationComplete?: (success: boolean) => void;
+  onVerificationComplete?: (success: boolean, result?: VerificationResult) => void;
   onVerificationError?: (error: string) => void;
   autoVerify?: boolean;
   verificationInterval?: number; // in seconds
@@ -131,14 +137,21 @@ const VerificationCamera: React.FC<VerificationCameraProps> = ({
         setStatus('success');
         setMessage(t('verification.verified'));
         setConfidence(result.confidence);
-        onVerificationComplete?.(true);
+        onVerificationComplete?.(true, {
+          isVerified: true,
+          matchScore: result.confidence,
+          livenessScore: result.livenessScore,
+        });
 
         // Send verification result to proctors
         studentSocket.sendVerificationResult(true, result.confidence);
       } else {
         setStatus('failed');
         setMessage(result.message || t('verification.verificationFailed'));
-        onVerificationComplete?.(false);
+        onVerificationComplete?.(false, {
+          isVerified: false,
+          matchScore: result.confidence || 0,
+        });
 
         // Send verification result to proctors
         studentSocket.sendVerificationResult(false, result.confidence || 0);

@@ -378,7 +378,13 @@
     "reviewNotes": "Review Notes (Optional)",
     "enterReviewNotes": "Enter any notes about this verification...",
     "recentVerifications": "Recent Verifications",
-    "noRecentVerifications": "No recent verifications"
+    "noRecentVerifications": "No recent verifications",
+    "pendingVerification": "Verification Required",
+    "verifyToSubmit": "Complete face verification to submit",
+    "verifyBeforeSubmit": "Face verification is required before you can submit the exam. Please look at the camera and wait for verification.",
+    "verificationComplete": "Face verification complete.",
+    "retrying": "Retrying...",
+    "retryAttempt": "Attempt {{current}} of {{max}}"
   },
   "results": {
     "title": "Exam Results",
@@ -552,7 +558,8 @@
     "updateFailed": "Failed to update",
     "deleteFailed": "Failed to delete",
     "removeFailed": "Failed to remove",
-    "saveFailed": "Failed to save"
+    "saveFailed": "Failed to save",
+    "submit": "Failed to submit exam. Please try again."
   },
   "validation": {
     "minLength": "Must be at least {{min}} characters",
