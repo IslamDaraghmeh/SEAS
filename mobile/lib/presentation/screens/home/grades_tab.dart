@@ -47,7 +47,9 @@ class GradesTab extends ConsumerWidget {
                     ? EmptyStateWidget(
                         icon: Icons.grade_outlined,
                         title: l10n.get('no_grades'),
-                        subtitle: l10n.get('no_data'),
+                        subtitle: l10n.locale.languageCode == 'ar'
+                            ? 'ستظهر النتائج هنا بعد إكمال الامتحانات'
+                            : 'Results appear here after you complete exams',
                       )
                     : CustomScrollView(
                         slivers: [
@@ -119,7 +121,9 @@ class GradesTab extends ConsumerWidget {
                                 vertical: 8,
                               ),
                               child: Text(
-                                l10n.get('recent_grades'),
+                                l10n.locale.languageCode == 'ar'
+                                    ? 'نتائج الامتحانات المكتملة'
+                                    : 'Completed exam results',
                                 style: theme.textTheme.titleMedium?.copyWith(
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -138,9 +142,8 @@ class GradesTab extends ConsumerWidget {
                                     padding: const EdgeInsets.only(bottom: 12),
                                     child: GradeCard(
                                       grade: grade,
-                                      onTap: () => context.push(
-                                        '/home/grade/${grade.id}',
-                                      ),
+                                      // View-only result of a completed exam.
+                                      onTap: null,
                                     ),
                                   );
                                 },

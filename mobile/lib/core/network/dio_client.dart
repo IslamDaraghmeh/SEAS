@@ -5,29 +5,40 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../constants/api_constants.dart';
 import 'api_endpoints.dart';
 
+/// Single shared secure-storage configuration used for BOTH reads and writes.
+///
+/// IMPORTANT: on Android, `encryptedSharedPreferences: true` and the default
+/// (`false`) are two completely different backing stores. If the token is
+/// written with one and read with the other, the read returns null. Previously
+/// the repository wrote with `encryptedSharedPreferences: true` while the Dio
+/// auth interceptor read with the default `const FlutterSecureStorage()`, so
+/// the `Authorization` header was never attached and every authed request came
+/// back 401 ("please login again"). Everything now uses this one instance.
+const FlutterSecureStorage appSecureStorage = FlutterSecureStorage(
+  aOptions: AndroidOptions(
+    encryptedSharedPreferences: true,
+  ),
+  iOptions: IOSOptions(
+    accessibility: KeychainAccessibility.first_unlock_this_device,
+  ),
+);
+
 /// Dio HTTP Client Provider
 final dioClientProvider = Provider<DioClient>((ref) {
-  return DioClient();
+  return DioClient(ref.watch(secureStorageProvider));
 });
 
 /// Secure Storage Provider
 final secureStorageProvider = Provider<FlutterSecureStorage>((ref) {
-  return const FlutterSecureStorage(
-    aOptions: AndroidOptions(
-      encryptedSharedPreferences: true,
-    ),
-    iOptions: IOSOptions(
-      accessibility: KeychainAccessibility.first_unlock_this_device,
-    ),
-  );
+  return appSecureStorage;
 });
 
 /// Dio HTTP Client with interceptors
 class DioClient {
   late final Dio _dio;
-  final FlutterSecureStorage _storage = const FlutterSecureStorage();
+  final FlutterSecureStorage _storage;
 
-  DioClient() {
+  DioClient(this._storage) {
     _dio = Dio(
       BaseOptions(
         baseUrl: ApiConstants.baseUrl + ApiConstants.apiPrefix,
@@ -174,11 +185,12 @@ class _AuthInterceptor extends Interceptor {
         try {
           final response = await Dio().post(
             '${ApiConstants.baseUrl}${ApiConstants.apiPrefix}${ApiEndpoints.refreshToken}',
-            data: {'refresh_token': refreshToken},
+            data: {'refreshToken': refreshToken},
           );
 
           if (response.statusCode == 200) {
-            final newToken = response.data['access_token'];
+            final newToken =
+                response.data['accessToken'] ?? response.data['access_token'];
             await _storage.write(key: ApiConstants.accessTokenKey, value: newToken);
 
             // Retry the original request

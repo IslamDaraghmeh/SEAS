@@ -47,22 +47,30 @@ class GradeModel extends Equatable {
   });
 
   factory GradeModel.fromJson(Map<String, dynamic> json) {
-    final grade = (json['grade'] ?? 0).toDouble();
-    final maxGrade = (json['max_grade'] ?? json['maxGrade'] ?? 100).toDouble();
+    // Backend `/exams/results` rows: { id, examId, examTitle, courseName,
+    // score, totalPoints, percentage, passed, submittedAt, gradedAt }.
+    // Fall back to older flat keys where present.
+    final grade =
+        (json['score'] ?? json['grade'] ?? 0).toDouble();
+    final maxGrade =
+        (json['totalPoints'] ?? json['max_grade'] ?? json['maxGrade'] ?? 100)
+            .toDouble();
     final percentage = maxGrade > 0 ? (grade / maxGrade) * 100 : 0.0;
+    final examTitle = json['examTitle'] ?? json['exam_title'];
 
     return GradeModel(
       id: json['id']?.toString() ?? '',
       examId: json['exam_id']?.toString() ?? json['examId']?.toString() ?? '',
       courseId:
           json['course_id']?.toString() ?? json['courseId']?.toString() ?? '',
-      courseName: json['course_name'] ?? json['courseName'] ?? '',
+      courseName:
+          json['courseName'] ?? json['course_name'] ?? examTitle ?? '',
       courseNameAr: json['course_name_ar'] ?? json['courseNameAr'],
       courseCode: json['course_code'] ?? json['courseCode'] ?? '',
       examType: json['exam_type'] ?? json['examType'] ?? 'midterm',
       grade: grade,
       maxGrade: maxGrade,
-      percentage: json['percentage']?.toDouble() ?? percentage,
+      percentage: (json['percentage'] as num?)?.toDouble() ?? percentage,
       letterGrade: json['letter_grade'] ?? json['letterGrade'],
       classAverage: json['class_average']?.toDouble() ??
           json['classAverage']?.toDouble(),

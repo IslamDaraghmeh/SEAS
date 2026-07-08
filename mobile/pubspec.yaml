@@ -27,7 +27,7 @@ dependencies:
   shared_preferences: ^2.2.2
 
   # Localization
-  intl: ^0.18.1
+  intl: ^0.20.2
 
   # UI Components
   cached_network_image: ^3.3.1
@@ -56,18 +56,10 @@ flutter:
     - assets/images/
     - assets/icons/
 
-  fonts:
-    - family: Cairo
-      fonts:
-        - asset: assets/fonts/Cairo-Regular.ttf
-        - asset: assets/fonts/Cairo-Bold.ttf
-          weight: 700
-        - asset: assets/fonts/Cairo-SemiBold.ttf
-          weight: 600
-        - asset: assets/fonts/Cairo-Medium.ttf
-          weight: 500
-        - asset: assets/fonts/Cairo-Light.ttf
-          weight: 300
+  # NOTE: The Cairo font is supplied at runtime via the `google_fonts` package
+  # (see app_theme.dart -> GoogleFonts.cairoTextTheme). The previously-declared
+  # bundled `fonts:` block pointed at assets/fonts/*.ttf files that are not in
+  # the repo, which broke every build. It has been removed intentionally.
 
 flutter_intl:
   enabled: true

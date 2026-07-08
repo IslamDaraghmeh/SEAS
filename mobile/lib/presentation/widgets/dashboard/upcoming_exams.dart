@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../core/localization/app_localizations.dart';
 import '../../../data/models/exam_model.dart';
 import '../exam/exam_card.dart';
-import '../common/empty_state_widget.dart';
 
 /// Upcoming Exams Widget for Dashboard
 class UpcomingExamsWidget extends StatelessWidget {
@@ -84,7 +82,7 @@ class UpcomingExamsWidget extends StatelessWidget {
               return ExamCard(
                 exam: exam,
                 compact: true,
-                onTap: () => context.push('/home/exam/${exam.id}'),
+                onTap: null,
               );
             },
           ),
@@ -176,7 +174,7 @@ class UpcomingExamsCarousel extends StatelessWidget {
                 final exam = exams[index];
                 return HorizontalExamCard(
                   exam: exam,
-                  onTap: () => context.push('/home/exam/${exam.id}'),
+                  onTap: null,
                 );
               },
             ),
@@ -265,7 +263,7 @@ class TodaysExamsWidget extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: InkWell(
-        onTap: () => context.push('/home/exam/${exam.id}'),
+        onTap: null,
         borderRadius: BorderRadius.circular(12),
         child: Container(
           padding: const EdgeInsets.all(12),

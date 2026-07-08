@@ -12,25 +12,34 @@ class ApiEndpoints {
   static const String verifyEmail = '/auth/verify-email';
   static const String resendVerification = '/auth/resend-verification';
 
-  // User Endpoints
-  static const String profile = '/users/profile';
-  static const String updateProfile = '/users/profile';
-  static const String changePassword = '/users/change-password';
-  static const String uploadAvatar = '/users/avatar';
+  // User Endpoints (real backend uses /auth/*)
+  static const String profile = '/auth/me'; // current user + nested student profile
+  static const String updateProfile = '/auth/profile';
+  static const String changePassword = '/auth/change-password';
+  static const String uploadAvatar = '/auth/avatar';
 
-  // Exam Endpoints
+  // Exam Endpoints (student-facing; match the real SEAS backend)
   static const String exams = '/exams';
+  static const String studentExams = '/exams/student'; // exams assigned to the student
+  static const String availableExams = '/exams/available'; // published/available now
+  static const String studentResults = '/exams/results'; // paginated results {data, meta}
   static String examById(String id) => '/exams/$id';
-  static String examResults(String examId) => '/exams/$examId/results';
-  static const String upcomingExams = '/exams/upcoming';
-  static const String pastExams = '/exams/past';
-  static const String examSchedule = '/exams/schedule';
+  static String examResultById(String resultId) => '/exams/results/$resultId';
+  // Legacy aliases kept so older call-sites still compile.
+  static String examResults(String examId) => '/exams/results/$examId';
+  static const String upcomingExams = '/exams/available';
+  static const String pastExams = '/exams/results';
+  static const String examSchedule = '/exams/student';
 
   // Course Endpoints
   static const String courses = '/courses';
   static String courseById(String id) => '/courses/$id';
+  static String studentCourses(String studentId) => '/courses/student/$studentId';
   static String courseExams(String courseId) => '/courses/$courseId/exams';
   static String courseGrades(String courseId) => '/courses/$courseId/grades';
+
+  // Current user (auth)
+  static const String authMe = '/auth/me';
 
   // Grade Endpoints
   static const String grades = '/grades';

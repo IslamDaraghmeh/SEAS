@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/app_colors.dart';
 import '../../../core/localization/app_localizations.dart';
@@ -83,7 +82,7 @@ class RecentGradesWidget extends StatelessWidget {
               final grade = grades[index];
               return MiniGradeCard(
                 grade: grade,
-                onTap: () => context.push('/home/grade/${grade.id}'),
+                onTap: null,
               );
             },
           ),
@@ -175,7 +174,7 @@ class RecentGradesCarousel extends StatelessWidget {
                 final grade = grades[index];
                 return _HorizontalGradeCard(
                   grade: grade,
-                  onTap: () => context.push('/home/grade/${grade.id}'),
+                  onTap: null,
                 );
               },
             ),

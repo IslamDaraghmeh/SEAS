@@ -17,7 +17,24 @@ class ExamRepository {
 
   ExamRepository(this._dioClient);
 
-  /// Get all exams
+  /// Parse a response body that may be a raw List, a `{data: [...]}` envelope,
+  /// or `{exams: [...]}` into a list of [ExamModel].
+  List<ExamModel> _parseExamList(dynamic body) {
+    final List<dynamic> data = body is List
+        ? body
+        : (body is Map<String, dynamic>
+            ? (body['data'] ?? body['exams'] ?? [])
+            : []);
+    return data
+        .whereType<Map<String, dynamic>>()
+        .map(ExamModel.fromJson)
+        .toList();
+  }
+
+  /// Get the exams assigned to the current student.
+  ///
+  /// Backend: `GET /exams/student` returns a raw JSON array. The optional
+  /// [status] filter is applied client-side because the endpoint is unfiltered.
   Future<List<ExamModel>> getExams({
     int page = 1,
     int limit = 20,
@@ -26,21 +43,12 @@ class ExamRepository {
     String? type,
   }) async {
     try {
-      final queryParams = <String, dynamic>{
-        'page': page,
-        'limit': limit,
-      };
-      if (status != null) queryParams['status'] = status;
-      if (courseId != null) queryParams['course_id'] = courseId;
-      if (type != null) queryParams['type'] = type;
-
-      final response = await _dioClient.get(
-        ApiEndpoints.exams,
-        queryParameters: queryParams,
-      );
-
-      final List<dynamic> data = response.data['data'] ?? response.data['exams'] ?? [];
-      return data.map((json) => ExamModel.fromJson(json)).toList();
+      final response = await _dioClient.get(ApiEndpoints.studentExams);
+      var exams = _parseExamList(response.data);
+      if (courseId != null) {
+        exams = exams.where((e) => e.courseId == courseId).toList();
+      }
+      return exams;
     } catch (e) {
       rethrow;
     }
@@ -59,16 +67,16 @@ class ExamRepository {
     }
   }
 
-  /// Get upcoming exams
+  /// Get upcoming/available exams for the student.
+  ///
+  /// Backend: `GET /exams/available` returns `{ data: [...], meta: {...} }`.
   Future<List<ExamModel>> getUpcomingExams({int limit = 5}) async {
     try {
-      final response = await _dioClient.get(
-        ApiEndpoints.upcomingExams,
-        queryParameters: {'limit': limit},
-      );
-
-      final List<dynamic> data = response.data['data'] ?? response.data['exams'] ?? [];
-      return data.map((json) => ExamModel.fromJson(json)).toList();
+      final response = await _dioClient.get(ApiEndpoints.availableExams);
+      final exams = _parseExamList(response.data);
+      return limit > 0 && exams.length > limit
+          ? exams.sublist(0, limit)
+          : exams;
     } catch (e) {
       rethrow;
     }
@@ -80,16 +88,8 @@ class ExamRepository {
     int limit = 20,
   }) async {
     try {
-      final response = await _dioClient.get(
-        ApiEndpoints.pastExams,
-        queryParameters: {
-          'page': page,
-          'limit': limit,
-        },
-      );
-
-      final List<dynamic> data = response.data['data'] ?? response.data['exams'] ?? [];
-      return data.map((json) => ExamModel.fromJson(json)).toList();
+      final response = await _dioClient.get(ApiEndpoints.pastExams);
+      return _parseExamList(response.data);
     } catch (e) {
       rethrow;
     }
@@ -111,11 +111,10 @@ class ExamRepository {
 
       final response = await _dioClient.get(
         ApiEndpoints.examSchedule,
-        queryParameters: queryParams,
+        queryParameters: queryParams.isEmpty ? null : queryParams,
       );
 
-      final List<dynamic> data = response.data['data'] ?? response.data['exams'] ?? [];
-      return data.map((json) => ExamModel.fromJson(json)).toList();
+      return _parseExamList(response.data);
     } catch (e) {
       rethrow;
     }

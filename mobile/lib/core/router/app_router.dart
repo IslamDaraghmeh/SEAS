@@ -16,14 +16,21 @@ import '../../presentation/screens/settings/language_screen.dart';
 
 /// App Router Configuration
 final appRouterProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authStateProvider);
-
+  // IMPORTANT: do NOT `ref.watch(authStateProvider)` here. Watching it would
+  // rebuild this provider (and construct a brand-new GoRouter) on every auth
+  // state change, which resets the Navigator back to `initialLocation: '/'`.
+  // Since the splash screen changes auth state on startup (initial -> loading
+  // -> unauthenticated), that caused the router to be recreated repeatedly,
+  // remounting the splash in an infinite loop and leaving the app stuck on the
+  // blue splash screen. Instead we build the router ONCE and let the
+  // `refreshListenable` below re-run `redirect`, reading the current auth state
+  // via `ref.read` at redirect time.
   return GoRouter(
     initialLocation: '/',
     debugLogDiagnostics: true,
     refreshListenable: GoRouterRefreshStream(ref),
     redirect: (context, state) {
-      final isLoggedIn = authState.isAuthenticated;
+      final isLoggedIn = ref.read(authStateProvider).isAuthenticated;
       final isLoggingIn = state.matchedLocation == '/login';
       final isRegistering = state.matchedLocation == '/register';
       final isSplash = state.matchedLocation == '/';

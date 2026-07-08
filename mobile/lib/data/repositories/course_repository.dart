@@ -17,7 +17,33 @@ class CourseRepository {
 
   CourseRepository(this._dioClient);
 
-  /// Get all courses
+  /// The current student's *entity* id (distinct from the user id). Needed by
+  /// `/courses/student/:studentId`. Resolved once from `/auth/me` and cached.
+  String? _cachedStudentId;
+
+  Future<String?> _studentId() async {
+    if (_cachedStudentId != null) return _cachedStudentId;
+    final res = await _dioClient.get(ApiEndpoints.authMe);
+    final student = res.data is Map ? res.data['student'] : null;
+    if (student is Map && student['id'] != null) {
+      _cachedStudentId = student['id'].toString();
+    }
+    return _cachedStudentId;
+  }
+
+  /// Normalise a body that may be a raw List or a `{data: [...]}` envelope.
+  List<Map<String, dynamic>> _asList(dynamic body) {
+    final list = body is List
+        ? body
+        : (body is Map<String, dynamic>
+            ? (body['data'] ?? body['courses'] ?? body['grades'] ?? [])
+            : []);
+    return (list as List).whereType<Map<String, dynamic>>().toList();
+  }
+
+  /// Get the current student's courses.
+  ///
+  /// Backend: `GET /courses/student/:studentId` (raw array).
   Future<List<CourseModel>> getCourses({
     int page = 1,
     int limit = 20,
@@ -25,21 +51,10 @@ class CourseRepository {
     String? academicYear,
   }) async {
     try {
-      final queryParams = <String, dynamic>{
-        'page': page,
-        'limit': limit,
-      };
-      if (semester != null) queryParams['semester'] = semester;
-      if (academicYear != null) queryParams['academic_year'] = academicYear;
-
-      final response = await _dioClient.get(
-        ApiEndpoints.courses,
-        queryParameters: queryParams,
-      );
-
-      final List<dynamic> data =
-          response.data['data'] ?? response.data['courses'] ?? [];
-      return data.map((json) => CourseModel.fromJson(json)).toList();
+      final sid = await _studentId();
+      if (sid == null) return [];
+      final response = await _dioClient.get(ApiEndpoints.studentCourses(sid));
+      return _asList(response.data).map(CourseModel.fromJson).toList();
     } catch (e) {
       rethrow;
     }
@@ -82,22 +97,24 @@ class CourseRepository {
     }
   }
 
-  /// Get course grades
+  /// Grades are derived from the student's graded exam results.
+  /// Backend: `GET /exams/results` -> `{ data: [...], meta }`.
+  Future<List<GradeModel>> _fetchResults() async {
+    final response = await _dioClient.get(ApiEndpoints.studentResults);
+    return _asList(response.data).map(GradeModel.fromJson).toList();
+  }
+
+  /// Get grades for a specific course (filtered client-side by name/id).
   Future<List<GradeModel>> getCourseGrades(String courseId) async {
     try {
-      final response = await _dioClient.get(
-        ApiEndpoints.courseGrades(courseId),
-      );
-
-      final List<dynamic> data =
-          response.data['data'] ?? response.data['grades'] ?? [];
-      return data.map((json) => GradeModel.fromJson(json)).toList();
+      final grades = await _fetchResults();
+      return grades.where((g) => g.courseId == courseId).toList();
     } catch (e) {
       rethrow;
     }
   }
 
-  /// Get all grades
+  /// Get all grades (graded exam results).
   Future<List<GradeModel>> getGrades({
     int page = 1,
     int limit = 20,
@@ -105,21 +122,11 @@ class CourseRepository {
     String? examType,
   }) async {
     try {
-      final queryParams = <String, dynamic>{
-        'page': page,
-        'limit': limit,
-      };
-      if (courseId != null) queryParams['course_id'] = courseId;
-      if (examType != null) queryParams['exam_type'] = examType;
-
-      final response = await _dioClient.get(
-        ApiEndpoints.grades,
-        queryParameters: queryParams,
-      );
-
-      final List<dynamic> data =
-          response.data['data'] ?? response.data['grades'] ?? [];
-      return data.map((json) => GradeModel.fromJson(json)).toList();
+      var grades = await _fetchResults();
+      if (courseId != null) {
+        grades = grades.where((g) => g.courseId == courseId).toList();
+      }
+      return grades;
     } catch (e) {
       rethrow;
     }
@@ -139,21 +146,13 @@ class CourseRepository {
     }
   }
 
-  /// Get recent grades
+  /// Get recent grades (most recent graded results).
   Future<List<GradeModel>> getRecentGrades({int limit = 5}) async {
     try {
-      final response = await _dioClient.get(
-        ApiEndpoints.grades,
-        queryParameters: {
-          'limit': limit,
-          'sort': 'created_at',
-          'order': 'desc',
-        },
-      );
-
-      final List<dynamic> data =
-          response.data['data'] ?? response.data['grades'] ?? [];
-      return data.map((json) => GradeModel.fromJson(json)).toList();
+      final grades = await _fetchResults();
+      return limit > 0 && grades.length > limit
+          ? grades.sublist(0, limit)
+          : grades;
     } catch (e) {
       rethrow;
     }
@@ -180,11 +179,34 @@ class CourseRepository {
     }
   }
 
-  /// Get GPA
+  /// GPA summary. The backend has no GPA endpoint, so we compute a summary from
+  /// the student's graded results and enrolled-course count.
   Future<GpaSummary> getGpa() async {
     try {
-      final response = await _dioClient.get(ApiEndpoints.gpa);
-      return GpaSummary.fromJson(response.data['data'] ?? response.data);
+      final grades = await _fetchResults();
+      final courses = await getCourses();
+      if (grades.isEmpty) {
+        return GpaSummary(
+          cumulativeGpa: 0,
+          semesterGpa: 0,
+          totalCredits: 0,
+          completedCredits: 0,
+          totalCourses: courses.length,
+          completedCourses: 0,
+        );
+      }
+      final avgPct =
+          grades.map((g) => g.percentage).reduce((a, b) => a + b) / grades.length;
+      final gpa = double.parse(((avgPct / 100) * 4.0).toStringAsFixed(2));
+      final passed = grades.where((g) => g.isPassing).length;
+      return GpaSummary(
+        cumulativeGpa: gpa,
+        semesterGpa: gpa,
+        totalCredits: 0,
+        completedCredits: 0,
+        totalCourses: courses.isNotEmpty ? courses.length : grades.length,
+        completedCourses: passed,
+      );
     } catch (e) {
       rethrow;
     }

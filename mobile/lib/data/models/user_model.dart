@@ -37,13 +37,27 @@ class UserModel extends Equatable {
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
+    // `/auth/me` returns the user with a nested `student` object holding the
+    // display name and student number. Pull those up so the profile screen has
+    // real data. Falls back to flat keys used elsewhere.
+    final student = json['student'] is Map<String, dynamic>
+        ? json['student'] as Map<String, dynamic>
+        : const <String, dynamic>{};
+
     return UserModel(
       id: json['id']?.toString() ?? '',
       email: json['email'] ?? '',
-      fullName: json['full_name'] ?? json['fullName'] ?? '',
-      fullNameAr: json['full_name_ar'] ?? json['fullNameAr'],
-      studentId: json['student_id']?.toString() ?? json['studentId']?.toString() ?? '',
-      phone: json['phone'],
+      fullName: student['nameEn'] ??
+          json['full_name'] ??
+          json['fullName'] ??
+          student['nameAr'] ??
+          '',
+      fullNameAr: student['nameAr'] ?? json['full_name_ar'] ?? json['fullNameAr'],
+      studentId: student['studentNumber']?.toString() ??
+          json['student_id']?.toString() ??
+          json['studentId']?.toString() ??
+          '',
+      phone: student['phone'] ?? json['phone'],
       avatar: json['avatar'] ?? json['avatar_url'],
       department: json['department'],
       departmentAr: json['department_ar'] ?? json['departmentAr'],

@@ -78,10 +78,11 @@ class AuthRepository {
 
       final response = await _dioClient.post(
         ApiEndpoints.refreshToken,
-        data: {'refresh_token': refreshToken},
+        data: {'refreshToken': refreshToken},
       );
 
-      final newToken = response.data['access_token'];
+      final newToken =
+          response.data['accessToken'] ?? response.data['access_token'];
       if (newToken != null) {
         await _storage.write(
           key: ApiConstants.accessTokenKey,

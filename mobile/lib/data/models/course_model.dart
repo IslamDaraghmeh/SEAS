@@ -41,28 +41,37 @@ class CourseModel extends Equatable {
   });
 
   factory CourseModel.fromJson(Map<String, dynamic> json) {
+    // Backend course shape: { id, code, codeEn, codeAr, nameEn, nameAr,
+    //   descriptionEn/Ar, semester, year, creditHours (may be null),
+    //   teacher: { nameEn, nameAr } }. Older flat keys kept as fallbacks.
+    final teacher = json['teacher'] is Map<String, dynamic>
+        ? json['teacher'] as Map<String, dynamic>
+        : const <String, dynamic>{};
+
     return CourseModel(
       id: json['id']?.toString() ?? '',
-      code: json['code'] ?? json['course_code'] ?? '',
-      name: json['name'] ?? json['course_name'] ?? '',
-      nameAr: json['name_ar'] ?? json['course_name_ar'],
-      description: json['description'],
-      descriptionAr: json['description_ar'],
-      creditHours: json['credit_hours'] ?? json['creditHours'] ?? 3,
+      code: json['code'] ?? json['codeEn'] ?? json['codeAr'] ??
+          json['course_code'] ?? '',
+      name: json['nameEn'] ?? json['name'] ?? json['course_name'] ??
+          json['nameAr'] ?? '',
+      nameAr: json['nameAr'] ?? json['name_ar'] ?? json['course_name_ar'],
+      description: json['descriptionEn'] ?? json['description'],
+      descriptionAr: json['descriptionAr'] ?? json['description_ar'],
+      creditHours: json['creditHours'] ?? json['credit_hours'] ?? 3,
       department: json['department'],
       departmentAr: json['department_ar'],
-      instructorName: json['instructor_name'] ?? json['instructorName'],
-      instructorNameAr: json['instructor_name_ar'] ?? json['instructorNameAr'],
+      instructorName:
+          teacher['nameEn'] ?? json['instructor_name'] ?? json['instructorName'],
+      instructorNameAr: teacher['nameAr'] ??
+          json['instructor_name_ar'] ??
+          json['instructorNameAr'],
       semester: json['semester'],
-      academicYear: json['academic_year'] ?? json['academicYear'],
+      academicYear:
+          json['year']?.toString() ?? json['academic_year'] ?? json['academicYear'],
       level: json['level'],
-      isActive: json['is_active'] ?? json['isActive'] ?? true,
-      createdAt: json['created_at'] != null
-          ? DateTime.tryParse(json['created_at'])
-          : null,
-      updatedAt: json['updated_at'] != null
-          ? DateTime.tryParse(json['updated_at'])
-          : null,
+      isActive: json['isActive'] ?? json['is_active'] ?? true,
+      createdAt: DateTime.tryParse(json['createdAt'] ?? json['created_at'] ?? ''),
+      updatedAt: DateTime.tryParse(json['updatedAt'] ?? json['updated_at'] ?? ''),
     );
   }
 

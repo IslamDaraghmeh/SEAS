@@ -232,8 +232,8 @@ class AppTheme {
   }
 
   // Card Theme
-  static CardTheme _cardTheme(Brightness brightness) {
-    return CardTheme(
+  static CardThemeData _cardTheme(Brightness brightness) {
+    return CardThemeData(
       elevation: 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
@@ -408,8 +408,8 @@ class AppTheme {
   }
 
   // Dialog Theme
-  static DialogTheme _dialogTheme(Brightness brightness) {
-    return DialogTheme(
+  static DialogThemeData _dialogTheme(Brightness brightness) {
+    return DialogThemeData(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
       ),

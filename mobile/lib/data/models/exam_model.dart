@@ -11,12 +11,18 @@ enum ExamStatus {
     switch (status.toLowerCase()) {
       case 'upcoming':
       case 'scheduled':
+      case 'published': // backend: published and waiting to start
+      case 'draft':
         return ExamStatus.upcoming;
       case 'ongoing':
       case 'in_progress':
+      case 'active': // backend: exam window currently open
         return ExamStatus.ongoing;
       case 'completed':
       case 'finished':
+      case 'graded':
+      case 'closed':
+      case 'archived':
         return ExamStatus.completed;
       case 'cancelled':
       case 'canceled':
@@ -161,37 +167,94 @@ class ExamModel extends Equatable {
   });
 
   factory ExamModel.fromJson(Map<String, dynamic> json) {
+    // The SEAS backend returns a nested shape:
+    //   { id, courseId, titleEn/titleAr, scheduledAt, endTime, durationMinutes,
+    //     totalPoints, status: PUBLISHED|ACTIVE|..., instructionsEn/Ar,
+    //     course: { codeEn, codeAr, nameEn, nameAr } }
+    // We parse that here while keeping fallbacks to the older flat snake_case
+    // keys so nothing else breaks.
+    final course = json['course'] is Map<String, dynamic>
+        ? json['course'] as Map<String, dynamic>
+        : const <String, dynamic>{};
+
+    final titleEn = json['titleEn'] ?? json['title_en'];
+    final titleAr = json['titleAr'] ?? json['title_ar'];
+
+    // The exam's own title (e.g. "Midterm Exam", "quiz #1") is the most useful
+    // label; fall back to the course name if a title isn't present.
+    final courseNameEn = titleEn ??
+        course['nameEn'] ??
+        json['course_name'] ??
+        json['courseName'] ??
+        course['nameAr'] ??
+        '';
+    final courseNameArabic = titleAr ??
+        course['nameAr'] ??
+        json['course_name_ar'] ??
+        json['courseNameAr'];
+
+    // Prefer an explicit start/schedule time; derive the end time from the
+    // duration when the backend doesn't send one.
+    final start = DateTime.tryParse(
+          json['scheduledAt'] ??
+              json['start_time'] ??
+              json['startTime'] ??
+              json['exam_date'] ??
+              json['examDate'] ??
+              '',
+        ) ??
+        DateTime.now();
+    final duration =
+        (json['durationMinutes'] ?? json['duration_minutes'] ?? 60) as int;
+    final end = DateTime.tryParse(json['endTime'] ?? json['end_time'] ?? '') ??
+        start.add(Duration(minutes: duration));
+
     return ExamModel(
       id: json['id']?.toString() ?? '',
-      courseId: json['course_id']?.toString() ?? json['courseId']?.toString() ?? '',
-      courseName: json['course_name'] ?? json['courseName'] ?? '',
-      courseNameAr: json['course_name_ar'] ?? json['courseNameAr'],
-      courseCode: json['course_code'] ?? json['courseCode'] ?? '',
-      type: ExamType.fromString(json['type'] ?? 'midterm'),
-      status: ExamStatus.fromString(json['status'] ?? 'upcoming'),
-      examDate: DateTime.tryParse(json['exam_date'] ?? json['examDate'] ?? '') ??
-          DateTime.now(),
-      startTime: DateTime.tryParse(json['start_time'] ?? json['startTime'] ?? '') ??
-          DateTime.now(),
-      endTime: DateTime.tryParse(json['end_time'] ?? json['endTime'] ?? '') ??
-          DateTime.now(),
-      durationMinutes: json['duration_minutes'] ?? json['durationMinutes'] ?? 60,
+      courseId: json['courseId']?.toString() ?? json['course_id']?.toString() ?? '',
+      courseName: courseNameEn,
+      courseNameAr: courseNameArabic,
+      courseCode: course['codeEn'] ??
+          course['codeAr'] ??
+          json['course_code'] ??
+          json['courseCode'] ??
+          '',
+      type: ExamType.fromString(
+        json['type'] ?? _inferType(titleEn ?? titleAr ?? ''),
+      ),
+      status: ExamStatus.fromString(json['status']?.toString() ?? 'upcoming'),
+      examDate: start,
+      startTime: start,
+      endTime: end,
+      durationMinutes: duration,
       location: json['location'],
       locationAr: json['location_ar'] ?? json['locationAr'],
       building: json['building'],
       room: json['room'],
-      maxGrade: (json['max_grade'] ?? json['maxGrade'] ?? 100).toDouble(),
-      instructions: json['instructions'],
-      instructionsAr: json['instructions_ar'] ?? json['instructionsAr'],
+      maxGrade:
+          (json['totalPoints'] ?? json['max_grade'] ?? json['maxGrade'] ?? 100)
+              .toDouble(),
+      instructions: json['instructionsEn'] ?? json['instructions'],
+      instructionsAr: json['instructionsAr'] ??
+          json['instructions_ar'] ??
+          json['instructionsAr'],
       isAttendanceMarked:
           json['is_attendance_marked'] ?? json['isAttendanceMarked'] ?? false,
-      createdAt: json['created_at'] != null
-          ? DateTime.tryParse(json['created_at'])
-          : null,
-      updatedAt: json['updated_at'] != null
-          ? DateTime.tryParse(json['updated_at'])
-          : null,
+      createdAt: DateTime.tryParse(
+          json['createdAt'] ?? json['created_at'] ?? ''),
+      updatedAt: DateTime.tryParse(
+          json['updatedAt'] ?? json['updated_at'] ?? ''),
     );
+  }
+
+  /// Best-effort exam type from the title, since the backend has no type field.
+  static String _inferType(String title) {
+    final t = title.toLowerCase();
+    if (t.contains('quiz')) return 'quiz';
+    if (t.contains('final') || t.contains('نهائي')) return 'final';
+    if (t.contains('practical') || t.contains('عملي')) return 'practical';
+    if (t.contains('oral') || t.contains('شفهي')) return 'oral';
+    return 'midterm';
   }
 
   Map<String, dynamic> toJson() {
